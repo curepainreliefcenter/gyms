@@ -5,7 +5,7 @@ import base64
 import requests
 
 app = Flask(__name__)
-app.secret_key = "gymos_secure_role_based_key_777"
+app.secret_key = "gymos_secure_master_key_2026"
 
 # GitHub API Configurations
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
@@ -14,27 +14,39 @@ GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 FILE_PATH = "gymos_data.json"
 
 def load_data():
+    default_data = {
+        "members": [{"id": 1, "name": "Rahul Sharma", "phone": "9876543210", "plan": "Gold (12 Months)", "scheme": "12+1 Free", "amount": 15000, "pt_trainer": "Amit", "pt_amount": 5000, "status": "Active"}],
+        "staff": [{"id": 1, "name": "Amit (Trainer)", "base_salary": 15000, "advance": 3000}],
+        "expenses": [{"id": 1, "category": "Electricity Bill", "amount": 4500, "date": "2026-06-01"}]
+    }
+    
+    # Local fallback or testing
     if not GITHUB_TOKEN or not GITHUB_REPO:
         if not os.path.exists(FILE_PATH):
-            default_data = {
-                "members": [{"id": 1, "name": "Rahul Sharma", "phone": "9876543210", "plan": "Gold (12 Months)", "scheme": "12+1 Free", "amount": 15000, "pt_trainer": "Amit", "pt_amount": 5000, "status": "Active"}],
-                "staff": [{"id": 1, "name": "Amit (Trainer)", "base_salary": 15000, "advance": 3000}],
-                "expenses": [{"id": 1, "category": "Electricity Bill", "amount": 4500, "date": "2026-06-01"}]
-            }
-            save_data(default_data)
-        with open(FILE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+            with open(FILE_PATH, "w", encoding="utf-8") as f:
+                json.dump(default_data, f, indent=4, ensure_ascii=False)
+        try:
+            with open(FILE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return default_data
 
+    # GitHub API Fetching
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{FILE_PATH}"
     headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "vnd.github+json"}
     response = requests.get(url, headers=headers)
     
     if response.status_code == 200:
-        file_content = response.json().get("content")
-        decoded_content = base64.b64decode(file_content).decode("utf-8")
-        return json.loads(decoded_content)
+        try:
+            file_content = response.json().get("content")
+            decoded_content = base64.b64decode(file_content).decode("utf-8")
+            return json.loads(decoded_content)
+        except:
+            return default_data
     else:
-        return {"members": [], "staff": [], "expenses": []}
+        # If gymos_data.json doesn't exist on GitHub yet, create it automatically
+        save_data(default_data)
+        return default_data
 
 def save_data(data):
     if not GITHUB_TOKEN or not GITHUB_REPO:
@@ -52,7 +64,7 @@ def save_data(data):
     encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     payload = {
-        "message": "Role-based action update gym data",
+        "message": "Auto-sync gymos data entry update",
         "content": encoded_content,
         "branch": GITHUB_BRANCH
     }
@@ -68,18 +80,16 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
         
-        # Admin Role
         if username == "admin" and password == "admin123":
             session["user"] = username
             session["role"] = "admin"
             return redirect(url_for("index"))
-        # Employee Role
         elif username == "staff" and password == "staff123":
             session["user"] = username
             session["role"] = "employee"
             return redirect(url_for("index", action="members"))
         else:
-            error = "गलत यूज़रनेम या पासवर्ड! (Admin: admin/admin123 या Staff: staff/staff123)"
+            error = "Invalid credentials! Use admin/admin123 or staff/staff123"
             
     return render_template_string(LOGIN_HTML, error=error)
 
@@ -96,7 +106,6 @@ def index():
     role = session.get("role", "employee")
     data = load_data()
     
-    # यदि एम्पलॉयी सीधे डैशबोर्ड या प्रतिबंधित पेज पर जाए तो उसे मेंबर्स पेज पर रीडायरेक्ट करें
     default_action = "members" if role == "employee" else "dashboard"
     action = request.args.get("action", default_action)
     
@@ -122,7 +131,6 @@ def index():
             save_data(data)
             return redirect(url_for("index", action="members"))
 
-        # केवल Admin स्टाफ या खर्चे जोड़ सकता है
         elif role == "admin":
             if form_type == "add_staff":
                 new_staff = {
@@ -162,6 +170,7 @@ def index():
         data=data, 
         action=action, 
         role=role,
+        sources_status="GitHub API Synced" if GITHUB_TOKEN else "Local JSON Mode",
         total_revenue=total_revenue,
         total_salaries=total_salaries,
         total_advances=total_advances,
@@ -172,11 +181,7 @@ def index():
 
 @app.route("/delete/<string:category>/<int:item_id>")
 def delete_item(category, item_id):
-    if "user" not in session:
-        return redirect(url_for("login"))
-    
-    # सुरक्षा जांच: केवल एडमिन ही डेटा डिलीट कर सकता है
-    if session.get("role") != "admin":
+    if "user" not in session or session.get("role") != "admin":
         return redirect(url_for("index", action="members"))
 
     data = load_data()
@@ -195,7 +200,7 @@ def delete_item(category, item_id):
 
 LOGIN_HTML = """
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -205,7 +210,7 @@ LOGIN_HTML = """
 <body class="bg-gray-950 text-white flex items-center justify-center h-screen px-4">
     <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-800">
         <h2 class="text-3xl font-black text-center mb-2 text-emerald-400">💪 GymOS CRM</h2>
-        <p class="text-xs text-gray-400 text-center mb-6">जिम मैनेजमेंट और रोल-बेस्ड एक्सेस सिस्टम</p>
+        <p class="text-xs text-gray-400 text-center mb-6">Cloud & GitHub Synced Management System</p>
         
         {% if error %}
             <div class="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-xl mb-4 text-xs text-center">{{ error }}</div>
@@ -213,19 +218,19 @@ LOGIN_HTML = """
         
         <form method="POST" class="space-y-4">
             <div>
-                <label class="block text-xs text-gray-400 mb-1">यूज़रनेम</label>
-                <input type="text" name="username" required placeholder="admin या staff" class="w-full px-4 py-2.5 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm">
+                <label class="block text-xs text-gray-400 mb-1">Username</label>
+                <input type="text" name="username" required placeholder="admin or staff" class="w-full px-4 py-2.5 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm">
             </div>
             <div>
-                <label class="block text-xs text-gray-400 mb-1">पासवर्ड</label>
+                <label class="block text-xs text-gray-400 mb-1">Password</label>
                 <input type="password" name="password" required placeholder="password" class="w-full px-4 py-2.5 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm">
             </div>
-            <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 transition rounded-xl font-bold text-gray-950 shadow-lg text-sm mt-2">लॉग इन करें</button>
+            <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 transition rounded-xl font-bold text-gray-950 shadow-lg text-sm mt-2">Log In</button>
         </form>
 
         <div class="mt-6 p-4 bg-gray-800/50 rounded-xl border border-gray-800 text-xs space-y-1 text-gray-400">
-            <p><strong class="text-emerald-400">👑 Admin Login:</strong> admin / admin123</p>
-            <p><strong class="text-yellow-400">👔 Staff Login:</strong> staff / staff123</p>
+            <p><strong class="text-emerald-400">👑 Admin:</strong> admin / admin123</p>
+            <p><strong class="text-yellow-400">👔 Staff:</strong> staff / staff123</p>
         </div>
     </div>
 </body>
@@ -234,34 +239,34 @@ LOGIN_HTML = """
 
 DASHBOARD_HTML = """
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymOS - Gym Management Suite</title>
+    <title>GymOS CRM Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans">
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
+        <!-- Sidebar Desktop -->
         <div class="hidden md:flex flex-col w-64 bg-gray-900 border-r border-gray-800 p-6">
-            <h1 class="text-2xl font-black text-emerald-400 mb-2 tracking-wider">💪 GymOS CRM</h1>
-            <p class="text-xs text-gray-400 mb-8 capitalize">role: <span class="text-emerald-400 font-bold">{{ role }}</span></p>
+            <h1 class="text-2xl font-black text-emerald-400 mb-1 tracking-wider">💪 GymOS</h1>
+            <p class="text-xs text-gray-400 mb-6 capitalize">Role: <span class="text-emerald-400 font-bold">{{ role }}</span></p>
+            <div class="mb-6 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-[10px] text-emerald-400 font-mono text-center">
+                🟢 {{ sources_status }}
+            </div>
             
             <nav class="space-y-2 flex-1">
                 {% if role == 'admin' %}
-                <a href="/?action=dashboard" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'dashboard' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">📊 फाइनेंशियल डैशबोर्ड</a>
+                <a href="/?action=dashboard" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'dashboard' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">📊 P&L Dashboard</a>
                 {% endif %}
-                
-                <a href="/?action=members" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'members' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👥 मेंबरशिप और स्कीम्स</a>
-                
+                <a href="/?action=members" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'members' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👥 Members & Schemes</a>
                 {% if role == 'admin' %}
-                <a href="/?action=staff" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'staff' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👔 स्टाफ और एडवांस सैलरी</a>
-                <a href="/?action=expenses" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'expenses' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">💡 यूटिलिटी और खर्चे</a>
+                <a href="/?action=staff" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'staff' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👔 Staff Payroll</a>
+                <a href="/?action=expenses" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'expenses' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">💡 Utilities & Expenses</a>
                 {% endif %}
-                
-                <a href="/logout" class="block py-2.5 px-4 rounded-xl font-semibold text-red-400 hover:bg-red-500/10 transition mt-8">🚪 लॉग आउट</a>
+                <a href="/logout" class="block py-2.5 px-4 rounded-xl font-semibold text-red-400 hover:bg-red-500/10 transition mt-8">🚪 Log Out</a>
             </nav>
         </div>
 
@@ -269,82 +274,82 @@ DASHBOARD_HTML = """
         <div class="flex-1 flex flex-col overflow-y-auto">
             <!-- Mobile Header -->
             <header class="bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center md:hidden">
-                <h1 class="text-xl font-bold text-emerald-400">GymOS <span class="text-xs text-gray-400">({{ role }})</span></h1>
-                <a href="/logout" class="text-xs text-red-400 font-bold">लॉग आउट</a>
+                <h1 class="text-lg font-black text-emerald-400">💪 GymOS <span class="text-[10px] text-emerald-300 font-mono">({{ sources_status }})</span></h1>
+                <a href="/logout" class="text-xs text-red-400 font-bold bg-red-500/10 px-3 py-1.5 rounded-lg">Log Out</a>
             </header>
 
-            <div class="flex md:hidden bg-gray-900/50 p-2 overflow-x-auto space-x-2 border-b border-gray-800">
+            <!-- Mobile Navbar -->
+            <div class="flex md:hidden bg-gray-900 p-2 overflow-x-auto space-x-2 border-b border-gray-800 shrink-0">
                 {% if role == 'admin' %}
-                <a href="/?action=dashboard" class="px-3 py-1 text-xs rounded bg-gray-800 text-emerald-400 whitespace-nowrap">डैशबोर्ड</a>
+                <a href="/?action=dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'dashboard' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Dashboard</a>
                 {% endif %}
-                <a href="/?action=members" class="px-3 py-1 text-xs rounded bg-gray-800 text-gray-300 whitespace-nowrap">मेंबर</a>
+                <a href="/?action=members" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'members' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Members</a>
                 {% if role == 'admin' %}
-                <a href="/?action=staff" class="px-3 py-1 text-xs rounded bg-gray-800 text-gray-300 whitespace-nowrap">स्टाफ</a>
-                <a href="/?action=expenses" class="px-3 py-1 text-xs rounded bg-gray-800 text-gray-300 whitespace-nowrap">खर्चे</a>
+                <a href="/?action=staff" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'staff' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Staff</a>
+                <a href="/?action=expenses" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'expenses' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Expenses</a>
                 {% endif %}
             </div>
 
-            <div class="p-6 max-w-7xl mx-auto w-full space-y-6">
+            <!-- Content Area -->
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
                 
-                <!-- VIEW 1: ADMIN DASHBOARD -->
                 {% if action == 'dashboard' and role == 'admin' %}
                 <div class="space-y-6">
-                    <h2 class="text-2xl font-black text-white">📊 मास्टर फाइनेंशियल डैशबोर्ड और P&L</h2>
+                    <h2 class="text-2xl font-black text-white">📊 Master Financial Dashboard</h2>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
-                            <p class="text-xs text-gray-400 font-bold">कुल रेवेन्यू (मेंबरशिप + PT)</p>
+                            <p class="text-xs text-gray-400 font-bold">Total Revenue</p>
                             <h3 class="text-2xl font-black text-emerald-400 mt-1">₹{{ total_revenue }}</h3>
                         </div>
                         <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
-                            <p class="text-xs text-gray-400 font-bold">कुल स्टाफ वेतन और एडवांस</p>
+                            <p class="text-xs text-gray-400 font-bold">Total Salary & Advance</p>
                             <h3 class="text-2xl font-black text-yellow-400 mt-1">₹{{ total_salaries + total_advances }}</h3>
                         </div>
                         <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
-                            <p class="text-xs text-gray-400 font-bold">यूटिलिटी और अन्य खर्चे</p>
+                            <p class="text-xs text-gray-400 font-bold">Total Expenses</p>
                             <h3 class="text-2xl font-black text-red-400 mt-1">₹{{ total_expenses }}</h3>
                         </div>
                         <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
-                            <p class="text-xs text-gray-400 font-bold">नेट प्रॉफिट (P&L)</p>
+                            <p class="text-xs text-gray-400 font-bold">Net Profit (P&L)</p>
                             <h3 class="text-2xl font-black text-blue-400 mt-1">₹{{ net_profit }}</h3>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl lg:col-span-2 flex flex-col justify-center">
-                            <h3 class="text-lg font-bold text-gray-200 mb-4">💡 बिजनेस इनसाइट्स</h3>
+                            <h3 class="text-lg font-bold text-gray-200 mb-4">💡 Business Summary</h3>
                             <ul class="space-y-3 text-sm text-gray-300">
-                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>सक्रिय जिम मेंबर:</span> <strong class="text-emerald-400">{{ data.members|length }}</strong></li>
-                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>स्टाफ संख्या:</span> <strong class="text-yellow-400">{{ data.staff|length }}</strong></li>
-                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>कुल एडवांस सैलरी बांटी गई:</span> <strong class="text-red-400">₹{{ total_advances }}</strong></li>
+                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Active Members:</span> <strong class="text-emerald-400">{{ data.members|length }}</strong></li>
+                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Total Staff:</span> <strong class="text-yellow-400">{{ data.staff|length }}</strong></li>
+                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Total Advance Given:</span> <strong class="text-red-400">₹{{ total_advances }}</strong></li>
                             </ul>
                         </div>
                         <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl flex flex-col items-center justify-center">
-                            <h3 class="text-sm font-bold text-gray-300 mb-2">प्लान डिस्ट्रीब्यूशन</h3>
-                            <div class="w-44 h-44">
+                            <h3 class="text-sm font-bold text-gray-300 mb-3">Membership Breakdown</h3>
+                            <div class="w-48 h-48">
                                 <canvas id="planChart"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- VIEW 2: MEMBERS & SCHEMES -->
                 {% elif action == 'members' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-                        <h2 class="text-xl font-bold text-emerald-400 mb-4">➕ नया मेंबर और स्पेशल ऑफर (12+1 / PT) जोड़ें</h2>
+                        <h2 class="text-xl font-bold text-emerald-400 mb-4">➕ Add Member & Schemes (12+1 / PT)</h2>
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_member">
                             <div>
-                                <label class="text-xs text-gray-400">पूरा नाम</label>
+                                <label class="text-xs text-gray-400">Full Name</label>
                                 <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">मोबाइल नंबर (WhatsApp)</label>
+                                <label class="text-xs text-gray-400">Mobile Number</label>
                                 <input type="text" name="phone" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">मेंबरशिप प्लान</label>
+                                <label class="text-xs text-gray-400">Membership Plan</label>
                                 <select name="plan" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                                     <option value="Gold (12 Months)">Gold (12 Months)</option>
                                     <option value="Silver (6 Months)">Silver (6 Months)</option>
@@ -353,20 +358,20 @@ DASHBOARD_HTML = """
                                 </select>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">स्पेशल ऑफर स्कीम</label>
+                                <label class="text-xs text-gray-400">Special Scheme</label>
                                 <select name="scheme" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
-                                    <option value="Standard">Standard (No Bonus)</option>
-                                    <option value="12+1 Free Scheme">12+1 Free Scheme</option>
-                                    <option value="6+1 Free Scheme">6+1 Free Scheme</option>
-                                    <option value="3+1 Free Scheme">3+1 Free Scheme</option>
+                                    <option value="Standard">Standard</option>
+                                    <option value="12+1 Free">12+1 Free Scheme</option>
+                                    <option value="6+1 Free">6+1 Free Scheme</option>
+                                    <option value="3+1 Free">3+1 Free Scheme</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">मेंबरशिप फीस (₹)</label>
+                                <label class="text-xs text-gray-400">Membership Fee (₹)</label>
                                 <input type="number" name="amount" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">पर्सनल ट्रेनर (PT)</label>
+                                <label class="text-xs text-gray-400">Personal Trainer (PT)</label>
                                 <select name="pt_trainer" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                                     <option value="None">None</option>
                                     <option value="Amit">Amit</option>
@@ -374,28 +379,28 @@ DASHBOARD_HTML = """
                                 </select>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">PT पैकेज फीस (₹)</label>
+                                <label class="text-xs text-gray-400">PT Amount (₹)</label>
                                 <input type="number" name="pt_amount" value="0" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div class="sm:col-span-3">
-                                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">मेंबर और स्कीम सेव करें</button>
+                                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Member Record</button>
                             </div>
                         </form>
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">👥 सभी जिम मेंबर्स लिस्ट</h3></div>
+                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">👥 Members List</h3></div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
-                                        <th class="p-3">नाम</th>
-                                        <th class="p-3">मोबाइल</th>
-                                        <th class="p-3">प्लान / स्कीम</th>
-                                        <th class="p-3">फीस</th>
-                                        <th class="p-3">PT ट्रेनर & फीस</th>
+                                        <th class="p-3">Name</th>
+                                        <th class="p-3">Mobile</th>
+                                        <th class="p-3">Plan / Scheme</th>
+                                        <th class="p-3">Fee</th>
+                                        <th class="p-3">PT Trainer</th>
                                         {% if role == 'admin' %}
-                                        <th class="p-3 text-center">एक्शन</th>
+                                        <th class="p-3 text-center">Action</th>
                                         {% endif %}
                                     </tr>
                                 </thead>
@@ -409,7 +414,7 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-blue-300">{{ m.pt_trainer }} <br><span class="text-xs text-gray-400">(₹{{ m.pt_amount }})</span></td>
                                         {% if role == 'admin' %}
                                         <td class="p-3 text-center">
-                                            <a href="/delete/member/{{ m.id }}" onclick="return confirm('डिटेल डिलीट करें?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">डिलीट</a>
+                                            <a href="/delete/member/{{ m.id }}" onclick="return confirm('Confirm delete?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                         {% endif %}
                                     </tr>
@@ -420,42 +425,41 @@ DASHBOARD_HTML = """
                     </div>
                 </div>
 
-                <!-- VIEW 3: STAFF & PAYROLL (Admin Only) -->
                 {% elif action == 'staff' and role == 'admin' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-                        <h2 class="text-xl font-bold text-yellow-400 mb-4">👔 स्टाफ और एडवांस सैलरी मैनेजमेंट</h2>
+                        <h2 class="text-xl font-bold text-yellow-400 mb-4">👔 Staff & Advance Salary Management</h2>
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_staff">
                             <div>
-                                <label class="text-xs text-gray-400">स्टाफ नाम और पद</label>
-                                <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="जैसे: Suresh (Trainer)">
+                                <label class="text-xs text-gray-400">Staff Name & Role</label>
+                                <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Trainer Name">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">बेसिक सैलरी (₹)</label>
+                                <label class="text-xs text-gray-400">Base Salary (₹)</label>
                                 <input type="number" name="base_salary" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">एडवांस सैलरी ली गई (₹)</label>
+                                <label class="text-xs text-gray-400">Advance Taken (₹)</label>
                                 <input type="number" name="advance" value="0" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div class="sm:col-span-3">
-                                <button type="submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 font-bold text-gray-950 rounded-lg transition text-sm shadow-lg">स्टाफ रिकॉर्ड सेव करें</button>
+                                <button type="submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Staff Record</button>
                             </div>
                         </form>
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">📋 स्टाफ पे-रोल लेजर</h3></div>
+                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">📋 Staff Payroll Ledger</h3></div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
-                                        <th class="p-3">स्टाफ नाम</th>
-                                        <th class="p-3">बेसिक सैलरी</th>
-                                        <th class="p-3">एडवांस डिडक्शन</th>
-                                        <th class="p-3">शुद्ध भुगतान (Net Pay)</th>
-                                        <th class="p-3 text-center">एक्शन</th>
+                                        <th class="p-3">Staff Name</th>
+                                        <th class="p-3">Base Salary</th>
+                                        <th class="p-3">Advance</th>
+                                        <th class="p-3">Net Pay</th>
+                                        <th class="p-3 text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
@@ -466,7 +470,7 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-red-400">₹{{ s.advance }}</td>
                                         <td class="p-3 text-emerald-400 font-bold">₹{{ s.base_salary - s.advance }}</td>
                                         <td class="p-3 text-center">
-                                            <a href="/delete/staff/{{ s.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">डिलीट</a>
+                                            <a href="/delete/staff/{{ s.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -476,41 +480,40 @@ DASHBOARD_HTML = """
                     </div>
                 </div>
 
-                <!-- VIEW 4: EXPENSES & UTILITIES (Admin Only) -->
                 {% elif action == 'expenses' and role == 'admin' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-                        <h2 class="text-xl font-bold text-red-400 mb-4">💡 यूटिलिटी और जिम खर्चे दर्ज करें</h2>
+                        <h2 class="text-xl font-bold text-red-400 mb-4">💡 Utilities & Gym Expenses</h2>
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_expense">
                             <div>
-                                <label class="text-xs text-gray-400">खर्च का प्रकार (Category)</label>
-                                <input type="text" name="category" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="बिजली बिल / मेंटेनेंस">
+                                <label class="text-xs text-gray-400">Category</label>
+                                <input type="text" name="category" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Electricity / Maintenance">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">राशि (₹)</label>
+                                <label class="text-xs text-gray-400">Amount (₹)</label>
                                 <input type="number" name="amount" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">तारीख</label>
+                                <label class="text-xs text-gray-400">Date</label>
                                 <input type="date" name="date" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div class="sm:col-span-3">
-                                <button type="submit" class="w-full py-3 bg-red-500 hover:bg-red-600 font-bold text-gray-950 rounded-lg transition text-sm shadow-lg">खर्च सेव करें</button>
+                                <button type="submit" class="w-full py-3 bg-red-500 hover:bg-red-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Expense</button>
                             </div>
                         </form>
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">📉 खर्च और यूटिलिटी लेजर</h3></div>
+                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">📉 Expenses Ledger</h3></div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
-                                        <th class="p-3">विवरण</th>
-                                        <th class="p-3">तारीख</th>
-                                        <th class="p-3">राशि</th>
-                                        <th class="p-3 text-center">एक्शन</th>
+                                        <th class="p-3">Description</th>
+                                        <th class="p-3">Date</th>
+                                        <th class="p-3">Amount</th>
+                                        <th class="p-3 text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
@@ -520,7 +523,7 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-gray-300">{{ e.date }}</td>
                                         <td class="p-3 text-red-400 font-bold">₹{{ e.amount }}</td>
                                         <td class="p-3 text-center">
-                                            <a href="/delete/expense/{{ e.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">डिलीट</a>
+                                            <a href="/delete/expense/{{ e.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                     </tr>
                                     {% endfor %}
