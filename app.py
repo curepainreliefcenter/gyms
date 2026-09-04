@@ -7,9 +7,17 @@ import requests
 app = Flask(__name__)
 app.secret_key = "gymos_secure_role_based_key_999"
 
-# GitHub API Configurations
+# GitHub API Configurations with Auto-URL Cleaner
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-GITHUB_REPO = os.environ.get("GITHUB_REPO") # Format: username/repo-name
+raw_repo = os.environ.get("GITHUB_REPO", "")
+
+if raw_repo.startswith("https://github.com/"):
+    GITHUB_REPO = raw_repo.replace("https://github.com/", "").strip("/")
+elif raw_repo.startswith("github.com/"):
+    GITHUB_REPO = raw_repo.replace("github.com/", "").strip("/")
+else:
+    GITHUB_REPO = raw_repo
+
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 FILE_PATH = "gymos_data.json"
 
