@@ -12,7 +12,14 @@
             "status": "Active"
         }
     ],
-    "staff": [],
+    "staff": [
+        {
+            "id": 1,
+            "name": "john",
+            "base_salary": 2000,
+            "advance": 4000
+        }
+    ],
     "expenses": [
         {
             "id": 1,
