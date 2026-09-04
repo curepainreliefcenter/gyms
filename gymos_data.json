@@ -12,14 +12,7 @@
             "status": "Active"
         }
     ],
-    "staff": [
-        {
-            "id": 1,
-            "name": "Amit (Trainer)",
-            "base_salary": 15000,
-            "advance": 3000
-        }
-    ],
+    "staff": [],
     "expenses": [
         {
             "id": 1,
