@@ -22,27 +22,36 @@ GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 FILE_PATH = "gymos_data.json"
 
 def load_data():
+    default_data = {
+        "members": [{"id": 1, "name": "Rahul Sharma", "phone": "9876543210", "plan": "Gold (12 Months)", "scheme": "12+1 Free", "amount": 15000, "pt_trainer": "Amit", "pt_amount": 5000, "status": "Active"}],
+        "staff": [{"id": 1, "name": "Amit (Trainer)", "base_salary": 15000, "advance": 3000}],
+        "expenses": [{"id": 1, "category": "Electricity Bill", "amount": 4500, "date": "2026-06-01"}]
+    }
+
     if not GITHUB_TOKEN or not GITHUB_REPO:
         if not os.path.exists(FILE_PATH):
-            default_data = {
-                "members": [{"id": 1, "name": "Rahul Sharma", "phone": "9876543210", "plan": "Gold (12 Months)", "scheme": "12+1 Free", "amount": 15000, "pt_trainer": "Amit", "pt_amount": 5000, "status": "Active"}],
-                "staff": [{"id": 1, "name": "Amit (Trainer)", "base_salary": 15000, "advance": 3000}],
-                "expenses": [{"id": 1, "category": "Electricity Bill", "amount": 4500, "date": "2026-06-01"}]
-            }
             save_data(default_data)
-        with open(FILE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(FILE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return default_data
 
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{FILE_PATH}"
     headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "vnd.github+json"}
     response = requests.get(url, headers=headers)
     
     if response.status_code == 200:
-        file_content = response.json().get("content")
-        decoded_content = base64.b64decode(file_content).decode("utf-8")
-        return json.loads(decoded_content)
+        try:
+            file_content = response.json().get("content")
+            decoded_content = base64.b64decode(file_content).decode("utf-8")
+            if not decoded_content.strip():
+                return default_data
+            return json.loads(decoded_content)
+        except Exception:
+            return default_data
     else:
-        return {"members": [], "staff": [], "expenses": []}
+        return default_data
 
 def save_data(data):
     if not GITHUB_TOKEN or not GITHUB_REPO:
@@ -530,7 +539,7 @@ DASHBOARD_HTML = """
         </div>
     </div>
 
-    {% if action == 'dashboard' and role == 'admin' %}
+    {% if action == 'dashboard' and role == 'admin' %>
     <script>
         const ctx = document.getElementById('planChart').getContext('2d');
         new Chart(ctx, {
