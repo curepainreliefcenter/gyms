@@ -15,8 +15,8 @@ FILE_PATH = "gymos_data.json"
 
 def load_data():
     default_data = {
-        "members": [{"id": 1, "name": "Rahul Sharma", "phone": "9876543210", "plan": "Gold (12 Months)", "scheme": "12+1 Free", "amount": 15000, "pt_trainer": "Amit", "pt_amount": 5000, "status": "Active"}],
-        "staff": [{"id": 1, "name": "Amit (Trainer)", "base_salary": 15000, "advance": 3000}],
+        "members": [{"id": 1, "name": "Rahul Sharma", "phone": "9876543210", "plan": "Gold (12 Months)", "scheme": "12+1 Free", "amount": 15000, "pt_trainer": "Amit (Trainer)", "pt_amount": 5000, "status": "Active"}],
+        "staff": [{"id": 1, "name": "Amit (Trainer)", "phone": "9876543210", "address": "Main Street, Gym Area", "base_salary": 15000, "advance": 3000}],
         "expenses": [{"id": 1, "category": "Electricity Bill", "amount": 4500, "date": "2026-06-01"}]
     }
     
@@ -44,7 +44,6 @@ def load_data():
         except:
             return default_data
     else:
-        # If gymos_data.json doesn't exist on GitHub yet, create it automatically
         save_data(default_data)
         return default_data
 
@@ -64,7 +63,7 @@ def save_data(data):
     encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     payload = {
-        "message": "Auto-sync gymos data entry update",
+        "message": "Auto-sync gymos data entry update with interlinked staff",
         "content": encoded_content,
         "branch": GITHUB_BRANCH
     }
@@ -136,6 +135,8 @@ def index():
                 new_staff = {
                     "id": len(data["staff"]) + 1,
                     "name": request.form.get("name"),
+                    "phone": request.form.get("phone"),
+                    "address": request.form.get("address"),
                     "base_salary": int(request.form.get("base_salary", 0)),
                     "advance": int(request.form.get("advance", 0))
                 }
@@ -371,11 +372,12 @@ DASHBOARD_HTML = """
                                 <input type="number" name="amount" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Personal Trainer (PT)</label>
+                                <label class="text-xs text-gray-400">Personal Trainer (PT) - Interlinked from Staff</label>
                                 <select name="pt_trainer" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                                     <option value="None">None</option>
-                                    <option value="Amit">Amit</option>
-                                    <option value="Rohit">Rohit</option>
+                                    {% for s in data.staff %}
+                                    <option value="{{ s.name }}">{{ s.name }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div>
@@ -429,11 +431,19 @@ DASHBOARD_HTML = """
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
                         <h2 class="text-xl font-bold text-yellow-400 mb-4">👔 Staff & Advance Salary Management</h2>
-                        <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <form method="POST" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_staff">
                             <div>
                                 <label class="text-xs text-gray-400">Staff Name & Role</label>
-                                <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Trainer Name">
+                                <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Trainer/Staff Name">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Mobile Number</label>
+                                <input type="text" name="phone" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Staff Mobile">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Address</label>
+                                <input type="text" name="address" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Staff Address">
                             </div>
                             <div>
                                 <label class="text-xs text-gray-400">Base Salary (₹)</label>
@@ -443,7 +453,7 @@ DASHBOARD_HTML = """
                                 <label class="text-xs text-gray-400">Advance Taken (₹)</label>
                                 <input type="number" name="advance" value="0" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
-                            <div class="sm:col-span-3">
+                            <div class="sm:col-span-2 lg:col-span-3">
                                 <button type="submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Staff Record</button>
                             </div>
                         </form>
@@ -456,6 +466,8 @@ DASHBOARD_HTML = """
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
                                         <th class="p-3">Staff Name</th>
+                                        <th class="p-3">Mobile</th>
+                                        <th class="p-3">Address</th>
                                         <th class="p-3">Base Salary</th>
                                         <th class="p-3">Advance</th>
                                         <th class="p-3">Net Pay</th>
@@ -466,7 +478,9 @@ DASHBOARD_HTML = """
                                     {% for s in data.staff %}
                                     <tr class="hover:bg-gray-800/30">
                                         <td class="p-3 font-semibold text-white">{{ s.name }}</td>
-                                        <td class="p-3 text-gray-300">₹{{ s.base_salary }}</td>
+                                        <td class="p-3 text-gray-300">{{ s.phone }}</td>
+                                        <td class="p-3 text-gray-300">{{ s.address }}</td>
+                                        <td class="p-3 text-gray-200">₹{{ s.base_salary }}</td>
                                         <td class="p-3 text-red-400">₹{{ s.advance }}</td>
                                         <td class="p-3 text-emerald-400 font-bold">₹{{ s.base_salary - s.advance }}</td>
                                         <td class="p-3 text-center">
