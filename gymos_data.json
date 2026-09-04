@@ -31,6 +31,14 @@
             "address": "giohhh",
             "base_salary": 2000,
             "advance": 0
+        },
+        {
+            "id": 2,
+            "name": "Shivam bhai ",
+            "phone": "1234567891",
+            "address": "Delhi ",
+            "base_salary": 15000,
+            "advance": 5000
         }
     ],
     "expenses": [
