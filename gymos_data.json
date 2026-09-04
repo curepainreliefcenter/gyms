@@ -10,6 +10,17 @@
             "pt_trainer": "Amit",
             "pt_amount": 7822,
             "status": "Active"
+        },
+        {
+            "id": 2,
+            "name": "Shivam do. ",
+            "phone": "123456891",
+            "plan": "Gold (12 Months)",
+            "scheme": "Standard",
+            "amount": 6000,
+            "pt_trainer": "None",
+            "pt_amount": 0,
+            "status": "Active"
         }
     ],
     "staff": [
