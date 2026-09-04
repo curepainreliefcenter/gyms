@@ -171,7 +171,7 @@ def index():
         data=data, 
         action=action, 
         role=role,
-        sources_status="GitHub API Synced" if GITHUB_TOKEN else "Local JSON Mode",
+        sources_status="Gyms" if GITHUB_TOKEN else "Local JSON Mode",
         total_revenue=total_revenue,
         total_salaries=total_salaries,
         total_advances=total_advances,
