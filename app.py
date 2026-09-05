@@ -116,7 +116,7 @@ def save_data(data):
     encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     payload = {
-        "message": "Gym Orbitedgemedia fixed modal scripts update",
+        "message": "Gym Orbitedgemedia PDF reports and quick comms update",
         "content": encoded_content,
         "branch": GITHUB_BRANCH
     }
@@ -419,10 +419,10 @@ DASHBOARD_HTML = """
             body * {
                 visibility: hidden;
             }
-            #invoiceModal, #invoiceModal * {
+            #invoiceModal, #invoiceModal *, .printable-section, .printable-section * {
                 visibility: visible;
             }
-            #invoiceModal {
+            .printable-section {
                 position: absolute;
                 left: 0;
                 top: 0;
@@ -481,42 +481,58 @@ DASHBOARD_HTML = """
                 
                 {% if action == 'dashboard' and role == 'admin' %}
                 <div class="space-y-6">
-                    <h2 class="text-2xl font-black text-white">📊 Master Financial Dashboard & P&L</h2>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
+                        <div>
+                            <h2 class="text-2xl font-black text-white">📊 Master Financial Dashboard & P&L</h2>
+                            <p class="text-xs text-gray-400 mt-1">Real-time financial performance breakdown for Gym Orbitedgemedia.</p>
+                        </div>
+                        <button onclick="window.print()" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-xs shadow-lg cursor-pointer">🖨️ Print Dashboard Report</button>
+                    </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
+                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl relative overflow-hidden">
+                            <div class="absolute -right-4 -bottom-4 text-emerald-500/10 text-6xl font-black">₹</div>
                             <p class="text-xs text-gray-400 font-bold">Total Revenue</p>
-                            <h3 class="text-xl font-black text-emerald-400 mt-1">₹{{ total_revenue }}</h3>
+                            <h3 class="text-2xl font-black text-emerald-400 mt-2">₹{{ total_revenue }}</h3>
+                            <span class="text-[10px] text-emerald-500 mt-1 block font-semibold">+ Memberships & PT</span>
                         </div>
-                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
+                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl relative overflow-hidden">
+                            <div class="absolute -right-4 -bottom-4 text-amber-500/10 text-6xl font-black">₹</div>
                             <p class="text-xs text-gray-400 font-bold">Pending Dues</p>
-                            <h3 class="text-xl font-black text-amber-400 mt-1">₹{{ total_dues }}</h3>
+                            <h3 class="text-2xl font-black text-amber-400 mt-2">₹{{ total_dues }}</h3>
+                            <span class="text-[10px] text-amber-500 mt-1 block font-semibold">To be collected</span>
                         </div>
-                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
+                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl relative overflow-hidden">
+                            <div class="absolute -right-4 -bottom-4 text-yellow-500/10 text-6xl font-black">₹</div>
                             <p class="text-xs text-gray-400 font-bold">Salary & Advances</p>
-                            <h3 class="text-xl font-black text-yellow-400 mt-1">₹{{ total_salaries + total_advances }}</h3>
+                            <h3 class="text-2xl font-black text-yellow-400 mt-2">₹{{ total_salaries + total_advances }}</h3>
+                            <span class="text-[10px] text-yellow-500 mt-1 block font-semibold">Staff Payroll Outflow</span>
                         </div>
-                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
+                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl relative overflow-hidden">
+                            <div class="absolute -right-4 -bottom-4 text-red-500/10 text-6xl font-black">₹</div>
                             <p class="text-xs text-gray-400 font-bold">Total Expenses</p>
-                            <h3 class="text-xl font-black text-red-400 mt-1">₹{{ total_expenses }}</h3>
+                            <h3 class="text-2xl font-black text-red-400 mt-2">₹{{ total_expenses }}</h3>
+                            <span class="text-[10px] text-red-500 mt-1 block font-semibold">Utilities & Bills</span>
                         </div>
-                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
+                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl relative overflow-hidden">
+                            <div class="absolute -right-4 -bottom-4 text-blue-500/10 text-6xl font-black">₹</div>
                             <p class="text-xs text-gray-400 font-bold">Net Profit (P&L)</p>
-                            <h3 class="text-xl font-black text-blue-400 mt-1">₹{{ net_profit }}</h3>
+                            <h3 class="text-2xl font-black text-blue-400 mt-2">₹{{ net_profit }}</h3>
+                            <span class="text-[10px] text-blue-400 mt-1 block font-semibold">Revenue - (Salary+Exp)</span>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl lg:col-span-2 flex flex-col justify-center">
-                            <h3 class="text-lg font-bold text-gray-200 mb-4">💡 Blueprint Business Insights</h3>
+                            <h3 class="text-lg font-bold text-gray-200 mb-4">💡 Blueprint Business Summary</h3>
                             <ul class="space-y-3 text-sm text-gray-300">
-                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Active Members:</span> <strong class="text-emerald-400">{{ data.members|length }}</strong></li>
-                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Active Prospects / Leads:</span> <strong class="text-amber-400">{{ data.leads|length }}</strong></li>
-                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Total Staff Registered:</span> <strong class="text-yellow-400">{{ data.staff|length }}</strong></li>
+                                <li class="flex justify-between p-3.5 bg-gray-800/40 rounded-xl border border-gray-800"><span>Active Members Registered:</span> <strong class="text-emerald-400 text-base">{{ data.members|length }}</strong></li>
+                                <li class="flex justify-between p-3.5 bg-gray-800/40 rounded-xl border border-gray-800"><span>Active Prospects / Leads in Pipeline:</span> <strong class="text-amber-400 text-base">{{ data.leads|length }}</strong></li>
+                                <li class="flex justify-between p-3.5 bg-gray-800/40 rounded-xl border border-gray-800"><span>Total Staff & Trainers Active:</span> <strong class="text-yellow-400 text-base">{{ data.staff|length }}</strong></li>
                             </ul>
                         </div>
                         <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl flex flex-col items-center justify-center">
-                            <h3 class="text-sm font-bold text-gray-300 mb-3">Membership Breakdown</h3>
+                            <h3 class="text-sm font-bold text-gray-300 mb-3">Membership Plan Distribution</h3>
                             <div class="w-48 h-48">
                                 <canvas id="planChart"></canvas>
                             </div>
@@ -570,10 +586,13 @@ DASHBOARD_HTML = """
                         </form>
                     </div>
 
-                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
+                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden printable-section">
                         <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <h3 class="font-bold text-gray-200">📋 Leads & Trial Tracking</h3>
-                            <input type="text" id="searchLeads" onkeyup="filterTable('searchLeads', 'leadsTable')" placeholder="🔍 Search prospects..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full sm:w-72">
+                            <div class="flex items-center gap-2 w-full sm:w-auto no-print">
+                                <input type="text" id="searchLeads" onkeyup="filterTable('searchLeads', 'leadsTable')" placeholder="🔍 Search prospects..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full sm:w-60">
+                                <button type="button" onclick="window.print()" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold rounded-xl text-xs whitespace-nowrap cursor-pointer">📄 Export PDF</button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table id="leadsTable" class="w-full text-left border-collapse text-sm">
@@ -584,7 +603,8 @@ DASHBOARD_HTML = """
                                         <th class="p-3">Source</th>
                                         <th class="p-3">Status</th>
                                         <th class="p-3">Follow-up Date</th>
-                                        <th class="p-3 text-center">Actions</th>
+                                        <th class="p-3 text-center no-print">Quick Actions</th>
+                                        <th class="p-3 text-center no-print">Admin Controls</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
@@ -598,7 +618,13 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-emerald-400">{{ l.source }}</td>
                                         <td class="p-3 text-yellow-400">{{ l.status }}</td>
                                         <td class="p-3 text-gray-300">{{ l.follow_up_date }}</td>
-                                        <td class="p-3 text-center space-x-2">
+                                        <td class="p-3 text-center space-x-1 no-print">
+                                            <a href="https://wa.me/91{{ l.phone }}?text=Hello%20{{ l.name }},%20welcome%20to%20Gym%20Orbitedgemedia!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
+                                            {% if l.email %}
+                                            <a href="mailto:{{ l.email }}?subject=Gym%20Orbitedgemedia%20Trial" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
+                                            {% endif %}
+                                        </td>
+                                        <td class="p-3 text-center space-x-1 no-print">
                                             <button type="button" onclick='openEditModal("lead", {{ l|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
                                             <a href="/delete/lead/{{ l.id }}" onclick="return confirm('Confirm delete lead?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
@@ -719,10 +745,13 @@ DASHBOARD_HTML = """
                         </form>
                     </div>
 
-                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
+                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden printable-section">
                         <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <h3 class="font-bold text-gray-200">👥 Members Directory</h3>
-                            <input type="text" id="searchMembers" onkeyup="filterTable('searchMembers', 'membersTable')" placeholder="🔍 Search members..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full sm:w-72">
+                            <div class="flex items-center gap-2 w-full sm:w-auto no-print">
+                                <input type="text" id="searchMembers" onkeyup="filterTable('searchMembers', 'membersTable')" placeholder="🔍 Search members..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full sm:w-60">
+                                <button type="button" onclick="window.print()" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold rounded-xl text-xs whitespace-nowrap cursor-pointer">📄 Export PDF</button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table id="membersTable" class="w-full text-left border-collapse text-sm">
@@ -734,7 +763,8 @@ DASHBOARD_HTML = """
                                         <th class="p-3">Fee / Dues</th>
                                         <th class="p-3">Start & Expiry Dates</th>
                                         <th class="p-3">Status</th>
-                                        <th class="p-3 text-center">Actions / Invoice</th>
+                                        <th class="p-3 text-center no-print">Quick Comms</th>
+                                        <th class="p-3 text-center no-print">Actions / Invoice</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
@@ -761,11 +791,17 @@ DASHBOARD_HTML = """
                                             🔴 Expires: {{ m.end_date }}
                                         </td>
                                         <td class="p-3"><span class="px-2 py-1 rounded text-xs {% if m.status == 'Active' %}bg-emerald-500/10 text-emerald-400{% else %}bg-amber-500/10 text-amber-400{% endif %}">{{ m.status }}</span></td>
-                                        <td class="p-3 text-center space-x-1">
-                                            <button type="button" onclick='openInvoiceModal({{ m|tojson|safe }})' class="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Invoice PDF</button>
-                                            <button type="button" onclick='openEditModal("member", {{ m|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
+                                        <td class="p-3 text-center space-x-1 no-print">
+                                            <a href="https://wa.me/91{{ m.phone }}?text=Hello%20{{ m.name }},%20reminder%20from%20Gym%20Orbitedgemedia!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
+                                            {% if m.email %}
+                                            <a href="mailto:{{ m.email }}?subject=Gym%20Orbitedgemedia%20Membership" class="text-blue-400 bg-blue-500/10 px-2 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
+                                            {% endif %}
+                                        </td>
+                                        <td class="p-3 text-center space-x-1 no-print">
+                                            <button type="button" onclick='openInvoiceModal({{ m|tojson|safe }})' class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-xs font-bold cursor-pointer">Invoice</button>
+                                            <button type="button" onclick='openEditModal("member", {{ m|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
                                             {% if role == 'admin' %}
-                                            <a href="/delete/member/{{ m.id }}" onclick="return confirm('Confirm delete member?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
+                                            <a href="/delete/member/{{ m.id }}" onclick="return confirm('Confirm delete member?');" class="text-red-400 bg-red-500/10 px-2 py-1 rounded text-xs font-bold">Delete</a>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -819,10 +855,13 @@ DASHBOARD_HTML = """
                         </form>
                     </div>
 
-                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
+                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden printable-section">
                         <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <h3 class="font-bold text-gray-200">📋 Staff Payroll Ledger</h3>
-                            <input type="text" id="searchStaff" onkeyup="filterTable('searchStaff', 'staffTable')" placeholder="🔍 Search staff..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-72">
+                            <div class="flex items-center gap-2 w-full sm:w-auto no-print">
+                                <input type="text" id="searchStaff" onkeyup="filterTable('searchStaff', 'staffTable')" placeholder="🔍 Search staff..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-60">
+                                <button type="button" onclick="window.print()" class="px-3.5 py-2 bg-yellow-500 hover:bg-yellow-600 text-gray-950 font-bold rounded-xl text-xs whitespace-nowrap cursor-pointer">📄 Export PDF</button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table id="staffTable" class="w-full text-left border-collapse text-sm">
@@ -834,7 +873,8 @@ DASHBOARD_HTML = """
                                         <th class="p-3">Advance (Minus)</th>
                                         <th class="p-3">Net Pay</th>
                                         <th class="p-3">Attendance</th>
-                                        <th class="p-3 text-center">Actions</th>
+                                        <th class="p-3 text-center no-print">Quick Comms</th>
+                                        <th class="p-3 text-center no-print">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
@@ -850,7 +890,13 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-red-400">₹{{ s.advance }}</td>
                                         <td class="p-3 text-emerald-400 font-bold">₹{{ s.base_salary - s.advance }}</td>
                                         <td class="p-3 text-yellow-300">{{ s.attendance }}</td>
-                                        <td class="p-3 text-center space-x-2">
+                                        <td class="p-3 text-center space-x-1 no-print">
+                                            <a href="https://wa.me/91{{ s.phone }}?text=Hello%20{{ s.name }},%20message%20from%20Gym%20Orbitedgemedia!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
+                                            {% if s.email %}
+                                            <a href="mailto:{{ s.email }}?subject=Gym%20Orbitedgemedia%20Staff" class="text-blue-400 bg-blue-500/10 px-2 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
+                                            {% endif %}
+                                        </td>
+                                        <td class="p-3 text-center space-x-1 no-print">
                                             <button type="button" onclick='openEditModal("staff", {{ s|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
                                             <a href="/delete/staff/{{ s.id }}" onclick="return confirm('Confirm delete staff?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
@@ -886,10 +932,13 @@ DASHBOARD_HTML = """
                         </form>
                     </div>
 
-                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
+                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden printable-section">
                         <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <h3 class="font-bold text-gray-200">📉 Expenses Ledger</h3>
-                            <input type="text" id="searchExpenses" onkeyup="filterTable('searchExpenses', 'expensesTable')" placeholder="🔍 Search expenses..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-400 w-full sm:w-72">
+                            <div class="flex items-center gap-2 w-full sm:w-auto no-print">
+                                <input type="text" id="searchExpenses" onkeyup="filterTable('searchExpenses', 'expensesTable')" placeholder="🔍 Search expenses..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-400 w-full sm:w-60">
+                                <button type="button" onclick="window.print()" class="px-3.5 py-2 bg-red-500 hover:bg-red-600 text-gray-950 font-bold rounded-xl text-xs whitespace-nowrap cursor-pointer">📄 Export PDF</button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table id="expensesTable" class="w-full text-left border-collapse text-sm">
@@ -898,7 +947,7 @@ DASHBOARD_HTML = """
                                         <th class="p-3">Description</th>
                                         <th class="p-3">Date</th>
                                         <th class="p-3">Amount</th>
-                                        <th class="p-3 text-center">Actions</th>
+                                        <th class="p-3 text-center no-print">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
@@ -907,7 +956,7 @@ DASHBOARD_HTML = """
                                         <td class="p-3 font-semibold text-white">{{ e.category }}</td>
                                         <td class="p-3 text-gray-300">{{ e.date }}</td>
                                         <td class="p-3 text-red-400 font-bold">₹{{ e.amount }}</td>
-                                        <td class="p-3 text-center space-x-2">
+                                        <td class="p-3 text-center space-x-2 no-print">
                                             <button type="button" onclick='openEditModal("expense", {{ e|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
                                             <a href="/delete/expense/{{ e.id }}" onclick="return confirm('Confirm delete expense?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
