@@ -10,7 +10,7 @@ app.secret_key = "gymos_secure_master_key_2026"
 
 # GitHub API Configurations
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-GITHUB_REPO = os.environ.get("GITHUB_REPO") # Format: username/repo-name
+GITHUB_REPO = os.environ.get("GITHUB_REPO")
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 FILE_PATH = "gymos_data.json"
 
@@ -69,7 +69,12 @@ def load_data():
                 json.dump(default_data, f, indent=4, ensure_ascii=False)
         try:
             with open(FILE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
+                d = json.load(f)
+                # Ensure all required keys exist to prevent KeyErrors
+                for key in default_data:
+                    if key not in d:
+                        d[key] = default_data[key]
+                return d
         except:
             return default_data
 
@@ -81,7 +86,11 @@ def load_data():
         try:
             file_content = response.json().get("content")
             decoded_content = base64.b64decode(file_content).decode("utf-8")
-            return json.loads(decoded_content)
+            d = json.loads(decoded_content)
+            for key in default_data:
+                if key not in d:
+                    d[key] = default_data[key]
+            return d
         except:
             return default_data
     else:
@@ -146,6 +155,12 @@ def index():
     role = session.get("role", "employee")
     data = load_data()
     
+    # Ensure keys exist safely
+    data.setdefault("members", [])
+    data.setdefault("leads", [])
+    data.setdefault("staff", [])
+    data.setdefault("expenses", [])
+
     default_action = "members" if role == "employee" else "dashboard"
     action = request.args.get("action", default_action)
     
@@ -228,16 +243,16 @@ def index():
                 save_data(data)
                 return redirect(url_for("index", action="expenses"))
 
-    total_revenue = sum(m["amount"] + m["pt_amount"] for m in data["members"])
-    total_dues = sum(m["dues"] for m in data["members"])
-    total_salaries = sum(s["base_salary"] for s in data["staff"])
-    total_advances = sum(s["advance"] for s in data["staff"])
-    total_expenses = sum(e["amount"] for e in data["expenses"])
+    total_revenue = sum(m.get("amount", 0) + m.get("pt_amount", 0) for m in data["members"])
+    total_dues = sum(m.get("dues", 0) for m in data["members"])
+    total_salaries = sum(s.get("base_salary", 0) for s in data["staff"])
+    total_advances = sum(s.get("advance", 0) for s in data["staff"])
+    total_expenses = sum(e.get("amount", 0) for e in data["expenses"])
     net_profit = total_revenue - (total_salaries + total_expenses)
 
     plans_count = {}
     for m in data["members"]:
-        p = m["plan"]
+        p = m.get("plan", "Standard")
         plans_count[p] = plans_count.get(p, 0) + 1
 
     plan_labels = list(plans_count.keys())
@@ -265,6 +280,11 @@ def delete_item(category, item_id):
         return redirect(url_for("index", action="members"))
 
     data = load_data()
+    data.setdefault("members", [])
+    data.setdefault("leads", [])
+    data.setdefault("staff", [])
+    data.setdefault("expenses", [])
+
     if category == "member":
         data["members"] = [m for m in data["members"] if m["id"] != item_id]
         redirect_action = "members"
