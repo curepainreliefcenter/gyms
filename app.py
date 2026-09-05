@@ -116,7 +116,7 @@ def save_data(data):
     encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     payload = {
-        "message": "Gym Orbitedgemedia invoice PDF and edit options update",
+        "message": "Gym Orbitedgemedia fixed modal scripts update",
         "content": encoded_content,
         "branch": GITHUB_BRANCH
     }
@@ -596,7 +596,7 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-yellow-400">{{ l.status }}</td>
                                         <td class="p-3 text-gray-300">{{ l.follow_up_date }}</td>
                                         <td class="p-3 text-center space-x-2">
-                                            <button onclick="openEditModal('lead', {{ l|tojson|safe }})" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold">Edit</button>
+                                            <button type="button" onclick='openEditModal("lead", {{ l|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
                                             <a href="/delete/lead/{{ l.id }}" onclick="return confirm('Confirm delete lead?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                     </tr>
@@ -756,8 +756,8 @@ DASHBOARD_HTML = """
                                         </td>
                                         <td class="p-3"><span class="px-2 py-1 rounded text-xs {% if m.status == 'Active' %}bg-emerald-500/10 text-emerald-400{% else %}bg-amber-500/10 text-amber-400{% endif %}">{{ m.status }}</span></td>
                                         <td class="p-3 text-center space-x-1">
-                                            <button onclick="openInvoiceModal({{ m|tojson|safe }})" class="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded text-xs font-bold">Invoice PDF</button>
-                                            <button onclick="openEditModal('member', {{ m|tojson|safe }})" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold">Edit</button>
+                                            <button type="button" onclick='openInvoiceModal({{ m|tojson|safe }})' class="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Invoice PDF</button>
+                                            <button type="button" onclick='openEditModal("member", {{ m|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
                                             {% if role == 'admin' %}
                                             <a href="/delete/member/{{ m.id }}" onclick="return confirm('Confirm delete member?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                             {% endif %}
@@ -842,7 +842,7 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-emerald-400 font-bold">₹{{ s.base_salary - s.advance }}</td>
                                         <td class="p-3 text-yellow-300">{{ s.attendance }}</td>
                                         <td class="p-3 text-center space-x-2">
-                                            <button onclick="openEditModal('staff', {{ s|tojson|safe }})" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold">Edit</button>
+                                            <button type="button" onclick='openEditModal("staff", {{ s|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
                                             <a href="/delete/staff/{{ s.id }}" onclick="return confirm('Confirm delete staff?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                     </tr>
@@ -896,7 +896,7 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-gray-300">{{ e.date }}</td>
                                         <td class="p-3 text-red-400 font-bold">₹{{ e.amount }}</td>
                                         <td class="p-3 text-center space-x-2">
-                                            <button onclick="openEditModal('expense', {{ e|tojson|safe }})" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold">Edit</button>
+                                            <button type="button" onclick='openEditModal("expense", {{ e|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
                                             <a href="/delete/expense/{{ e.id }}" onclick="return confirm('Confirm delete expense?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                     </tr>
@@ -915,7 +915,7 @@ DASHBOARD_HTML = """
     <!-- UNIVERSAL EDIT MODAL -->
     <div id="editModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
         <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeEditModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white font-bold text-lg">✕</button>
+            <button type="button" onclick="closeEditModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white font-bold text-lg cursor-pointer">✕</button>
             <h3 id="modalTitle" class="text-xl font-bold text-emerald-400 mb-4">Edit Entry</h3>
             <form id="editForm" method="POST" class="space-y-4">
                 <input type="hidden" name="form_type" id="editFormType">
@@ -924,7 +924,7 @@ DASHBOARD_HTML = """
                 <div id="modalBodyFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Injected dynamically via JS -->
                 </div>
-                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold rounded-xl shadow-lg transition text-sm">Save Changes</button>
+                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold rounded-xl shadow-lg transition text-sm cursor-pointer">Save Changes</button>
             </form>
         </div>
     </div>
@@ -932,7 +932,7 @@ DASHBOARD_HTML = """
     <!-- INVOICE PREVIEW MODAL -->
     <div id="invoiceModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
         <div class="bg-white text-gray-900 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
-            <button onclick="closeInvoiceModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 font-bold text-lg no-print">✕</button>
+            <button type="button" onclick="closeInvoiceModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 font-bold text-lg no-print cursor-pointer">✕</button>
             
             <div class="text-center border-b pb-4 mb-6">
                 <h2 class="text-2xl font-black text-emerald-600">Gym Orbitedgemedia</h2>
@@ -992,8 +992,8 @@ DASHBOARD_HTML = """
             </div>
 
             <div class="flex space-x-4 no-print">
-                <button onclick="window.print()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition text-sm text-center">Download / Print PDF</button>
-                <button onclick="closeInvoiceModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition text-sm">Close</button>
+                <button type="button" onclick="window.print()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition text-sm text-center cursor-pointer">Download / Print PDF</button>
+                <button type="button" onclick="closeInvoiceModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition text-sm cursor-pointer">Close</button>
             </div>
         </div>
     </div>
