@@ -1,22 +1,6 @@
 {
     "members": [
         {
-            "id": 2,
-            "name": "Shivam do. ",
-            "phone": "123456891",
-            "plan": "Gold (12 Months)",
-            "scheme": "Standard",
-            "amount": 6000,
-            "pt_trainer": "None",
-            "pt_amount": 0,
-            "status": "Active",
-            "email": "curepainreliefcenter@gmail.com",
-            "address": "giohhh",
-            "dues": 0,
-            "start_date": "2026-09-19",
-            "end_date": "2026-09-29"
-        },
-        {
             "id": 3,
             "name": "Cure Pain Relief Center",
             "phone": "7894561230",
