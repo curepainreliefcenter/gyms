@@ -57,5 +57,15 @@
             "date": "2026-06-01"
         }
     ],
-    "leads": []
+    "leads": [
+        {
+            "id": 1,
+            "name": "Shivam bhai ",
+            "phone": "1234567891",
+            "email": "",
+            "source": "Walk-In",
+            "status": "Trial (3-Day)",
+            "follow_up_date": "2026-09-11"
+        }
+    ]
 }
