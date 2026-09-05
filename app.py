@@ -359,7 +359,7 @@ def index():
         data=data, 
         action=action, 
         role=role,
-        sources_status="GitHub API Synced" if GITHUB_TOKEN else "Local JSON Mode",
+        sources_status="Demo" if GITHUB_TOKEN else "Local JSON Mode",
         total_revenue=total_revenue,
         total_dues=total_dues,
         total_salaries=total_salaries,
@@ -1121,7 +1121,7 @@ DASHBOARD_HTML = """
         <div class="bg-white text-gray-900 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
             <button type="button" onclick="closeOfferModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 font-bold text-lg no-print cursor-pointer">✕</button>
             <div class="text-center border-b pb-4 mb-6">
-                <h2 class="text-2xl font-black text-emerald-600">Gym Orbitedgemedia</h2>
+                <h2 class="text-2xl font-black text-emerald-600">Gym OEM</h2>
                 <p class="text-xs text-gray-500">Official Employment Offer Letter</p>
             </div>
             <div class="mb-4 text-sm space-y-1">
@@ -1133,13 +1133,13 @@ DASHBOARD_HTML = """
             <div class="space-y-3 text-xs sm:text-sm text-gray-700 leading-relaxed mb-6">
                 <p class="font-bold text-gray-900">Subject: Employment Offer Letter for the position of <span id="offerRoleTitle" class="text-emerald-600"></span></p>
                 <p>Dear <span id="offerNameDear" class="font-semibold"></span>,</p>
-                <p>We are thrilled to offer you employment at <strong>Gym Orbitedgemedia</strong> starting immediately in our professional fitness facility.</p>
+                <p>We are thrilled to offer you employment at <strong>Gym OEM</strong> starting immediately in our professional fitness facility.</p>
                 <p>Your designation will be <strong id="offerRoleDesc"></strong> with a committed monthly base salary of <strong id="offerSalary" class="text-emerald-600"></strong>.</p>
             </div>
             <div class="flex justify-between items-center border-t pt-6 mb-6 text-sm">
                 <div>
                     <p class="font-bold text-gray-900">Authorized Signatory</p>
-                    <p class="text-xs text-gray-500">Gym Orbitedgemedia Management</p>
+                    <p class="text-xs text-gray-500">Gym OEM Management</p>
                 </div>
                 <div class="text-right">
                     <p class="font-bold text-gray-900">Employee Acceptance</p>
