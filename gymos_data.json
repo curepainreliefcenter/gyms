@@ -33,16 +33,7 @@
             "end_date": "2027-09-05"
         }
     ],
-    "staff": [
-        {
-            "id": 2,
-            "name": "Shivam bhai ",
-            "phone": "1234567891",
-            "address": "Delhi ",
-            "base_salary": 15000,
-            "advance": 5000
-        }
-    ],
+    "staff": [],
     "expenses": [
         {
             "id": 1,
