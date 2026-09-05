@@ -571,9 +571,12 @@ DASHBOARD_HTML = """
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">📋 Leads & Trial Tracking</h3></div>
+                        <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <h3 class="font-bold text-gray-200">📋 Leads & Trial Tracking</h3>
+                            <input type="text" id="searchLeads" onkeyup="filterTable('searchLeads', 'leadsTable')" placeholder="🔍 Search prospects..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full sm:w-72">
+                        </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-sm">
+                            <table id="leadsTable" class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
                                         <th class="p-3">Name</th>
@@ -717,9 +720,12 @@ DASHBOARD_HTML = """
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">👥 Members Directory</h3></div>
+                        <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <h3 class="font-bold text-gray-200">👥 Members Directory</h3>
+                            <input type="text" id="searchMembers" onkeyup="filterTable('searchMembers', 'membersTable')" placeholder="🔍 Search members..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full sm:w-72">
+                        </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-sm">
+                            <table id="membersTable" class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
                                         <th class="p-3">Member Details</th>
@@ -814,9 +820,12 @@ DASHBOARD_HTML = """
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">📋 Staff Payroll Ledger</h3></div>
+                        <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <h3 class="font-bold text-gray-200">📋 Staff Payroll Ledger</h3>
+                            <input type="text" id="searchStaff" onkeyup="filterTable('searchStaff', 'staffTable')" placeholder="🔍 Search staff..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-72">
+                        </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-sm">
+                            <table id="staffTable" class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
                                         <th class="p-3">Staff Name</th>
@@ -878,9 +887,12 @@ DASHBOARD_HTML = """
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">📉 Expenses Ledger</h3></div>
+                        <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <h3 class="font-bold text-gray-200">📉 Expenses Ledger</h3>
+                            <input type="text" id="searchExpenses" onkeyup="filterTable('searchExpenses', 'expensesTable')" placeholder="🔍 Search expenses..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-400 w-full sm:w-72">
+                        </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-sm">
+                            <table id="expensesTable" class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
                                         <th class="p-3">Description</th>
@@ -919,7 +931,6 @@ DASHBOARD_HTML = """
             <h3 id="modalTitle" class="text-xl font-bold text-emerald-400 mb-4">Edit Entry</h3>
             <form id="editForm" method="POST" class="space-y-4">
                 <input type="hidden" name="form_type" id="editFormType">
-                <input type="hidden" name="" id="editRecordIdName">
                 <input type="hidden" name="" id="editRecordIdVal" value="">
                 <div id="modalBodyFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Injected dynamically via JS -->
@@ -1018,6 +1029,27 @@ DASHBOARD_HTML = """
             }
         }
 
+        function filterTable(inputId, tableId) {
+            const input = document.getElementById(inputId);
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById(tableId);
+            const trs = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < trs.length; i++) {
+                let visible = false;
+                const tds = trs[i].getElementsByTagName('td');
+                for (let j = 0; j < tds.length; j++) {
+                    if (tds[j]) {
+                        if (tds[j].innerText.toLowerCase().indexOf(filter) > -1) {
+                            visible = true;
+                            break;
+                        }
+                    }
+                }
+                trs[i].style.display = visible ? '' : 'none';
+            }
+        }
+
         function openInvoiceModal(m) {
             document.getElementById('invName').innerText = m.name;
             document.getElementById('invPhone').innerText = 'Phone: ' + m.phone;
@@ -1057,7 +1089,6 @@ DASHBOARD_HTML = """
             const modal = document.getElementById('editModal');
             const title = document.getElementById('modalTitle');
             const formType = document.getElementById('editFormType');
-            const idNameInput = document.getElementById('editRecordIdName');
             const idValInput = document.getElementById('editRecordIdVal');
             const fieldsContainer = document.getElementById('modalBodyFields');
             
@@ -1068,7 +1099,7 @@ DASHBOARD_HTML = """
             if (type === 'member') {
                 title.innerText = 'Edit Member Record';
                 formType.value = 'edit_member';
-                idNameInput.name = 'member_id';
+                idValInput.name = 'member_id';
                 idValInput.value = item.id;
 
                 fieldsContainer.innerHTML = `
@@ -1089,7 +1120,7 @@ DASHBOARD_HTML = """
             } else if (type === 'lead') {
                 title.innerText = 'Edit Lead Record';
                 formType.value = 'edit_lead';
-                idNameInput.name = 'lead_id';
+                idValInput.name = 'lead_id';
                 idValInput.value = item.id;
 
                 fieldsContainer.innerHTML = `
@@ -1103,7 +1134,7 @@ DASHBOARD_HTML = """
             } else if (type === 'staff') {
                 title.innerText = 'Edit Staff Record';
                 formType.value = 'edit_staff';
-                idNameInput.name = 'staff_id';
+                idValInput.name = 'staff_id';
                 idValInput.value = item.id;
 
                 fieldsContainer.innerHTML = `
@@ -1118,7 +1149,7 @@ DASHBOARD_HTML = """
             } else if (type === 'expense') {
                 title.innerText = 'Edit Expense Record';
                 formType.value = 'edit_expense';
-                idNameInput.name = 'expense_id';
+                idValInput.name = 'expense_id';
                 idValInput.value = item.id;
 
                 fieldsContainer.innerHTML = `
