@@ -409,7 +409,7 @@ LOGIN_HTML = """
 <body class="bg-gray-950 text-white flex items-center justify-center h-screen px-4">
     <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-800">
         <h2 class="text-3xl font-black text-center mb-2 text-emerald-400">💪 Gym Orbitedgemedia</h2>
-        <p class="text-xs text-gray-400 text-center mb-6">Complete Blueprint Management System</p>
+        <p class="text-xs text-gray-400 text-center mb-6">Complete Management System</p>
         
         {% if error %}
             <div class="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-xl mb-4 text-xs text-center">{{ error }}</div>
