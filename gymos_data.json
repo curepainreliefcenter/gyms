@@ -21,6 +21,22 @@
             "pt_trainer": "None",
             "pt_amount": 0,
             "status": "Active"
+        },
+        {
+            "id": 3,
+            "name": "Cure Pain Relief Center",
+            "phone": "7894561230",
+            "email": "curepainreliefcenter@gmail.com",
+            "address": "giohhh",
+            "plan": "Gold (12 Months)",
+            "scheme": "12+1 Free",
+            "amount": 500,
+            "dues": 1000,
+            "pt_trainer": "None",
+            "pt_amount": 1500,
+            "status": "Active",
+            "start_date": "2026-09-05",
+            "end_date": "2027-09-05"
         }
     ],
     "staff": [
