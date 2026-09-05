@@ -33,7 +33,18 @@
             "end_date": "2027-09-05"
         }
     ],
-    "staff": [],
+    "staff": [
+        {
+            "id": 1,
+            "name": "Cure Pain Relief Center",
+            "phone": "7894561230",
+            "email": "curepainreliefcenter@gmail.com",
+            "address": "giohhh",
+            "base_salary": 2000,
+            "advance": 0,
+            "attendance": "Present"
+        }
+    ],
     "expenses": [
         {
             "id": 1,
