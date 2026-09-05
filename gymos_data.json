@@ -41,14 +41,5 @@
             "date": "2026-06-01"
         }
     ],
-    "leads": [
-        {
-            "id": 1,
-            "name": "Vikas Verma",
-            "phone": "9123456789",
-            "source": "Instagram Ad",
-            "status": "Trial (3-Day)",
-            "follow_up_date": "2026-06-10"
-        }
-    ]
+    "leads": []
 }
