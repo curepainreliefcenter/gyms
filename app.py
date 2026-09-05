@@ -119,7 +119,7 @@ def save_data(data):
     encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     payload = {
-        "message": "Gym Staff docs and offer letter update",
+        "message": "Gym Staff Portal & Features update",
         "content": encoded_content,
         "branch": GITHUB_BRANCH
     }
@@ -169,7 +169,7 @@ def index():
     default_action = "members" if role == "employee" else "dashboard"
     action = request.args.get("action", default_action)
     
-    if role == "employee" and action in ["dashboard", "staff", "expenses", "leads"]:
+    if role == "employee" and action in ["dashboard", "staff", "expenses"]:
         action = "members"
 
     if request.method == "POST":
@@ -259,6 +259,14 @@ def index():
                     l["follow_up_date"] = request.form.get("follow_up_date")
             save_data(data)
             return redirect(url_for("index", action="leads"))
+
+        elif form_type == "staff_self_attendance" and role == "employee":
+            s_id = int(request.form.get("staff_id"))
+            for s in data["staff"]:
+                if s["id"] == s_id:
+                    s["attendance"] = request.form.get("attendance")
+            save_data(data)
+            return redirect(url_for("index", action="my_profile"))
 
         elif role == "admin":
             if form_type == "add_staff":
@@ -472,11 +480,13 @@ DASHBOARD_HTML = """
                 {% if role == 'admin' %}
                 <a href="/?action=dashboard" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'dashboard' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">📊 P&L Dashboard</a>
                 <a href="/?action=leads" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'leads' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">🎯 Prospect & Leads</a>
-                {% endif %}
                 <a href="/?action=members" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'members' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👥 Members & Lifecycle</a>
-                {% if role == 'admin' %}
                 <a href="/?action=staff" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'staff' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👔 Staff Payroll & Attn</a>
                 <a href="/?action=expenses" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'expenses' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">💡 Expenses Ledger</a>
+                {% else %}
+                <a href="/?action=members" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'members' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👥 Members Directory</a>
+                <a href="/?action=leads" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'leads' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">🎯 Prospect & Leads</a>
+                <a href="/?action=my_profile" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'my_profile' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👤 Staff Portal & Attendance</a>
                 {% endif %}
                 <a href="/logout" class="block py-2.5 px-4 rounded-xl font-semibold text-red-400 hover:bg-red-500/10 transition mt-8">🚪 Log Out</a>
             </nav>
@@ -492,11 +502,13 @@ DASHBOARD_HTML = """
                 {% if role == 'admin' %}
                 <a href="/?action=dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'dashboard' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Dashboard</a>
                 <a href="/?action=leads" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'leads' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Leads</a>
-                {% endif %}
                 <a href="/?action=members" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'members' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Members</a>
-                {% if role == 'admin' %}
                 <a href="/?action=staff" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'staff' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Staff</a>
                 <a href="/?action=expenses" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'expenses' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Expenses</a>
+                {% else %}
+                <a href="/?action=members" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'members' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Members</a>
+                <a href="/?action=leads" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'leads' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Leads</a>
+                <a href="/?action=my_profile" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'my_profile' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Staff Portal</a>
                 {% endif %}
             </div>
 
@@ -563,7 +575,7 @@ DASHBOARD_HTML = """
                     </div>
                 </div>
 
-                {% elif action == 'leads' and role == 'admin' %}
+                {% elif action == 'leads' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
                         <h2 class="text-xl font-bold text-emerald-400 mb-4">🎯 Prospect & Lead Management</h2>
@@ -627,7 +639,7 @@ DASHBOARD_HTML = """
                                         <th class="p-3">Status</th>
                                         <th class="p-3">Follow-up Date</th>
                                         <th class="p-3 text-center no-print">Quick Actions</th>
-                                        <th class="p-3 text-center no-print">Admin Controls</th>
+                                        <th class="p-3 text-center no-print">Controls</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
@@ -649,7 +661,9 @@ DASHBOARD_HTML = """
                                         </td>
                                         <td class="p-3 text-center space-x-1 no-print">
                                             <button type="button" onclick='openEditModal("lead", {{ l|tojson|safe }})' class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer">Edit</button>
+                                            {% if role == 'admin' %}
                                             <a href="/delete/lead/{{ l.id }}" onclick="return confirm('Confirm delete lead?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -831,6 +845,62 @@ DASHBOARD_HTML = """
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                {% elif action == 'my_profile' and role == 'employee' %}
+                <div class="space-y-6">
+                    <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
+                        <h2 class="text-xl font-bold text-yellow-400 mb-2">👤 Staff Self-Service Portal</h2>
+                        <p class="text-xs text-gray-400 mb-6">View your designated salary structure, uploaded documents, and update your daily attendance status.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {% for s in data.staff %}
+                            {% if loop.first %}
+                            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-bold text-white">{{ s.name }}</h3>
+                                    <span class="text-xs font-semibold px-3 py-1 bg-yellow-500/10 text-yellow-400 rounded-full">{{ s.role }}</span>
+                                </div>
+                                <div class="space-y-2 text-sm text-gray-300">
+                                    <p>📱 <strong>Phone:</strong> {{ s.phone }}</p>
+                                    <p>📧 <strong>Email:</strong> {{ s.email or 'N/A' }}</p>
+                                    <p>🏠 <strong>Address:</strong> {{ s.address }}</p>
+                                    <p>💰 <strong>Base Salary:</strong> <span class="text-emerald-400 font-bold">₹{{ s.base_salary }}</span></p>
+                                    <p>🔻 <strong>Advance Taken:</strong> <span class="text-red-400 font-bold">₹{{ s.advance }}</span></p>
+                                    <p>🟢 <strong>Current Attendance:</strong> <span class="text-yellow-400 font-bold">{{ s.attendance }}</span></p>
+                                </div>
+                                <div class="pt-4 border-t border-gray-700">
+                                    <p class="text-xs text-gray-400 mb-2">Submitted ID Proof: <strong class="text-blue-400">{{ s.doc_type }}</strong></p>
+                                    {% if s.doc_data %}
+                                    <button type="button" onclick="openDocModal('{{ s.doc_data }}', '{{ s.name }} - {{ s.doc_type }}')" class="text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl font-bold text-xs hover:bg-emerald-500/20 cursor-pointer inline-block">👁️ View Uploaded Document</button>
+                                    {% else %}
+                                    <span class="text-gray-500 text-xs italic">No document uploaded yet</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="text-lg font-bold text-emerald-400 mb-2">⏰ Mark Daily Attendance</h3>
+                                    <p class="text-xs text-gray-400 mb-4">Let management know your availability for today.</p>
+                                </div>
+                                <form method="POST" class="space-y-4">
+                                    <input type="hidden" name="form_type" value="staff_self_attendance">
+                                    <input type="hidden" name="staff_id" value="{{ s.id }}">
+                                    <div>
+                                        <label class="text-xs text-gray-400">Select Status</label>
+                                        <select name="attendance" class="w-full mt-1 p-3 bg-gray-900 rounded-xl border border-gray-700 text-sm text-white">
+                                            <option value="Present" {% if s.attendance == 'Present' %}selected{% endif %}>Present / Active</option>
+                                            <option value="On Leave" {% if s.attendance == 'On Leave' %}selected{% endif %}>On Leave</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg cursor-pointer">Update My Attendance</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -1034,14 +1104,12 @@ DASHBOARD_HTML = """
         </div>
     </div>
 
-    <!-- DOCUMENT PREVIEW MODAL (SMALL WINDOW) -->
+    <!-- DOCUMENT PREVIEW MODAL -->
     <div id="docViewModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
         <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
             <button type="button" onclick="closeDocModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white font-bold text-lg cursor-pointer">✕</button>
             <h3 id="docModalTitle" class="text-lg font-bold text-emerald-400 mb-4">Document Viewer</h3>
-            <div id="docViewerContainer" class="w-full h-80 bg-gray-950 rounded-xl flex items-center justify-center overflow-hidden border border-gray-800">
-                <!-- Injected via JS -->
-            </div>
+            <div id="docViewerContainer" class="w-full h-80 bg-gray-950 rounded-xl flex items-center justify-center overflow-hidden border border-gray-800"></div>
             <div class="mt-4 flex justify-end">
                 <button type="button" onclick="closeDocModal()" class="px-5 py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs cursor-pointer">Close Window</button>
             </div>
@@ -1052,27 +1120,22 @@ DASHBOARD_HTML = """
     <div id="offerModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
         <div class="bg-white text-gray-900 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
             <button type="button" onclick="closeOfferModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 font-bold text-lg no-print cursor-pointer">✕</button>
-            
             <div class="text-center border-b pb-4 mb-6">
                 <h2 class="text-2xl font-black text-emerald-600">Gym Orbitedgemedia</h2>
                 <p class="text-xs text-gray-500">Official Employment Offer Letter</p>
             </div>
-
             <div class="mb-4 text-sm space-y-1">
                 <p class="text-xs text-gray-500">Date: <span id="offerDate" class="font-bold text-gray-800"></span></p>
                 <p class="font-bold text-gray-950 text-base mt-2">To, <span id="offerName"></span></p>
                 <p class="text-xs text-gray-600">Address: <span id="offerAddress"></span></p>
                 <p class="text-xs text-gray-600">Phone: <span id="offerPhone"></span></p>
             </div>
-
             <div class="space-y-3 text-xs sm:text-sm text-gray-700 leading-relaxed mb-6">
                 <p class="font-bold text-gray-900">Subject: Employment Offer Letter for the position of <span id="offerRoleTitle" class="text-emerald-600"></span></p>
                 <p>Dear <span id="offerNameDear" class="font-semibold"></span>,</p>
-                <p>We are thrilled to offer you employment at <strong>Gym Orbitedgemedia</strong> starting immediately in our professional fitness facility. We were deeply impressed by your background and enthusiasm.</p>
+                <p>We are thrilled to offer you employment at <strong>Gym Orbitedgemedia</strong> starting immediately in our professional fitness facility.</p>
                 <p>Your designation will be <strong id="offerRoleDesc"></strong> with a committed monthly base salary of <strong id="offerSalary" class="text-emerald-600"></strong>.</p>
-                <p>We look forward to working with you to deliver world-class service to our fitness members. Please sign and return a copy of this letter as acceptance of our offer.</p>
             </div>
-
             <div class="flex justify-between items-center border-t pt-6 mb-6 text-sm">
                 <div>
                     <p class="font-bold text-gray-900">Authorized Signatory</p>
@@ -1083,7 +1146,6 @@ DASHBOARD_HTML = """
                     <p class="text-xs text-gray-500">Signature & Date</p>
                 </div>
             </div>
-
             <div class="flex space-x-4 no-print">
                 <button type="button" onclick="window.print()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition text-sm text-center cursor-pointer">Download / Print Offer Letter</button>
                 <button type="button" onclick="closeOfferModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition text-sm cursor-pointer">Close</button>
@@ -1099,9 +1161,7 @@ DASHBOARD_HTML = """
             <form id="editForm" method="POST" enctype="multipart/form-data" class="space-y-4">
                 <input type="hidden" name="form_type" id="editFormType">
                 <input type="hidden" name="" id="editRecordIdVal" value="">
-                <div id="modalBodyFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Injected dynamically via JS -->
-                </div>
+                <div id="modalBodyFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
                 <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold rounded-xl shadow-lg transition text-sm cursor-pointer">Save Changes</button>
             </form>
         </div>
@@ -1111,12 +1171,10 @@ DASHBOARD_HTML = """
     <div id="invoiceModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
         <div class="bg-white text-gray-900 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
             <button type="button" onclick="closeInvoiceModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 font-bold text-lg no-print cursor-pointer">✕</button>
-            
             <div class="text-center border-b pb-4 mb-6">
                 <h2 class="text-2xl font-black text-emerald-600">Gym Orbitedgemedia</h2>
                 <p class="text-xs text-gray-500">Official Membership Fee Receipt & Tax Invoice</p>
             </div>
-
             <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
                 <div>
                     <p class="text-xs text-gray-500 font-bold">INVOICE TO:</p>
@@ -1132,7 +1190,6 @@ DASHBOARD_HTML = """
                     <p class="text-xs text-gray-600">Status: <span class="font-bold text-emerald-600">PAID</span></p>
                 </div>
             </div>
-
             <table class="w-full text-left border-collapse mb-6 text-sm">
                 <thead>
                     <tr class="bg-gray-100 text-gray-700 border-b">
@@ -1158,17 +1215,10 @@ DASHBOARD_HTML = """
                     </tr>
                 </tbody>
             </table>
-
             <div class="flex justify-between items-center border-t pt-4 mb-8">
                 <span class="font-bold text-gray-700">Total Paid Amount:</span>
                 <span id="invTotalPaid" class="text-2xl font-black text-emerald-600"></span>
             </div>
-
-            <div class="text-center text-[10px] text-gray-400 border-t pt-4 mb-6">
-                <p>Thank you for choosing Gym Orbitedgemedia! Stay fit, stay healthy.</p>
-                <p>This is a computer-generated invoice document.</p>
-            </div>
-
             <div class="flex space-x-4 no-print">
                 <button type="button" onclick="window.print()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition text-sm text-center cursor-pointer">Download / Print PDF</button>
                 <button type="button" onclick="closeInvoiceModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition text-sm cursor-pointer">Close</button>
@@ -1221,13 +1271,11 @@ DASHBOARD_HTML = """
             document.getElementById('docModalTitle').innerText = titleText;
             const container = document.getElementById('docViewerContainer');
             container.innerHTML = '';
-            
             if (dataUri.startsWith('data:application/pdf')) {
                 container.innerHTML = `<iframe src="${dataUri}" class="w-full h-full border-0"></iframe>`;
             } else {
                 container.innerHTML = `<img src="${dataUri}" class="max-h-full max-w-full object-contain rounded-lg">`;
             }
-
             const modal = document.getElementById('docViewModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -1249,7 +1297,6 @@ DASHBOARD_HTML = """
             document.getElementById('offerRoleTitle').innerText = roleStr;
             document.getElementById('offerRoleDesc').innerText = roleStr;
             document.getElementById('offerSalary').innerText = '₹' + s.base_salary + ' per month';
-
             const modal = document.getElementById('offerModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -1284,36 +1331,6 @@ DASHBOARD_HTML = """
                 ptRow.style.display = 'none';
                 document.getElementById('invTotalPaid').innerText = '₹' + m.amount;
             }
-
-            const modal = document.getElementById('invoiceModal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden'); // Fixed toggle sequence below
-        }
-
-        function openInvoiceModal(m) {
-            document.getElementById('invName').innerText = m.name;
-            document.getElementById('invPhone').innerText = 'Phone: ' + m.phone;
-            document.getElementById('invEmail').innerText = 'Email: ' + (m.email || 'N/A');
-            document.getElementById('invAddress').innerText = 'Address: ' + (m.address || 'N/A');
-            document.getElementById('invIssuedDate').innerText = new Date().toISOString().split('T')[0];
-            document.getElementById('invPlan').innerText = m.plan;
-            document.getElementById('invScheme').innerText = m.scheme;
-            document.getElementById('invAmount').innerText = '₹' + m.amount;
-            document.getElementById('invStart').innerText = m.start_date;
-            document.getElementById('invEnd').innerText = m.end_date;
-            document.getElementById('invDues').innerText = '₹' + m.dues;
-            
-            const ptRow = document.getElementById('ptRow');
-            if (m.pt_trainer && m.pt_trainer !== 'None') {
-                ptRow.style.display = 'table-row';
-                document.getElementById('invPtTrainer').innerText = '(' + m.pt_trainer + ')';
-                document.getElementById('invPtAmount').innerText = '₹' + m.pt_amount;
-                document.getElementById('invTotalPaid').innerText = '₹' + (m.amount + m.pt_amount);
-            } else {
-                ptRow.style.display = 'none';
-                document.getElementById('invTotalPaid').innerText = '₹' + m.amount;
-            }
-
             const modal = document.getElementById('invoiceModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -1341,7 +1358,6 @@ DASHBOARD_HTML = """
                 formType.value = 'edit_member';
                 idValInput.name = 'member_id';
                 idValInput.value = item.id;
-
                 fieldsContainer.innerHTML = `
                     <div><label class="text-xs text-gray-400">Full Name</label><input type="text" name="name" value="${item.name}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
                     <div><label class="text-xs text-gray-400">Mobile</label><input type="text" name="phone" value="${item.phone}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
@@ -1362,7 +1378,6 @@ DASHBOARD_HTML = """
                 formType.value = 'edit_lead';
                 idValInput.name = 'lead_id';
                 idValInput.value = item.id;
-
                 fieldsContainer.innerHTML = `
                     <div><label class="text-xs text-gray-400">Name</label><input type="text" name="name" value="${item.name}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
                     <div><label class="text-xs text-gray-400">Phone</label><input type="text" name="phone" value="${item.phone}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
@@ -1376,7 +1391,6 @@ DASHBOARD_HTML = """
                 formType.value = 'edit_staff';
                 idValInput.name = 'staff_id';
                 idValInput.value = item.id;
-
                 fieldsContainer.innerHTML = `
                     <div><label class="text-xs text-gray-400">Name</label><input type="text" name="name" value="${item.name}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
                     <div><label class="text-xs text-gray-400">Role</label><select name="role" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"><option value="Trainer" ${item.role=='Trainer'?'selected':''}>Trainer</option><option value="Cleaning" ${item.role=='Cleaning'?'selected':''}>Cleaning Staff</option><option value="Receptionist" ${item.role=='Receptionist'?'selected':''}>Receptionist</option><option value="Manager" ${item.role=='Manager'?'selected':''}>Manager</option><option value="Maintenance" ${item.role=='Maintenance'?'selected':''}>Maintenance</option></select></div>
@@ -1394,7 +1408,6 @@ DASHBOARD_HTML = """
                 formType.value = 'edit_expense';
                 idValInput.name = 'expense_id';
                 idValInput.value = item.id;
-
                 fieldsContainer.innerHTML = `
                     <div><label class="text-xs text-gray-400">Category</label><input type="text" name="category" value="${item.category}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
                     <div><label class="text-xs text-gray-400">Amount (₹)</label><input type="number" name="amount" value="${item.amount}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
