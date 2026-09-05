@@ -1172,7 +1172,7 @@ DASHBOARD_HTML = """
         <div class="bg-white text-gray-900 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
             <button type="button" onclick="closeInvoiceModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 font-bold text-lg no-print cursor-pointer">✕</button>
             <div class="text-center border-b pb-4 mb-6">
-                <h2 class="text-2xl font-black text-emerald-600">Gym Orbitedgemedia</h2>
+                <h2 class="text-2xl font-black text-emerald-600">Gym OEM</h2>
                 <p class="text-xs text-gray-500">Official Membership Fee Receipt & Tax Invoice</p>
             </div>
             <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
