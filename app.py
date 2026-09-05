@@ -3,6 +3,7 @@ import json
 import os
 import base64
 import requests
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = "gymos_secure_master_key_2026"
@@ -15,9 +16,51 @@ FILE_PATH = "gymos_data.json"
 
 def load_data():
     default_data = {
-        "members": [{"id": 1, "name": "Rahul Sharma", "phone": "9876543210", "plan": "Gold (12 Months)", "scheme": "12+1 Free", "amount": 15000, "pt_trainer": "Amit (Trainer)", "pt_amount": 5000, "status": "Active"}],
-        "staff": [{"id": 1, "name": "Amit (Trainer)", "phone": "9876543210", "address": "Main Street, Gym Area", "base_salary": 15000, "advance": 3000}],
-        "expenses": [{"id": 1, "category": "Electricity Bill", "amount": 4500, "date": "2026-06-01"}]
+        "members": [
+            {
+                "id": 1, 
+                "name": "Rahul Sharma", 
+                "phone": "9876543210", 
+                "plan": "Gold (12 Months)", 
+                "scheme": "12+1 Free", 
+                "amount": 15000, 
+                "dues": 2000,
+                "pt_trainer": "Amit (Trainer)", 
+                "pt_amount": 5000, 
+                "status": "Active",
+                "start_date": "2026-01-01",
+                "end_date": "2027-01-01"
+            }
+        ],
+        "leads": [
+            {
+                "id": 1,
+                "name": "Vikas Verma",
+                "phone": "9123456789",
+                "source": "Instagram Ad",
+                "status": "Trial (3-Day)",
+                "follow_up_date": "2026-06-10"
+            }
+        ],
+        "staff": [
+            {
+                "id": 1, 
+                "name": "Amit (Trainer)", 
+                "phone": "9876543210", 
+                "address": "Main Street, Gym Area", 
+                "base_salary": 15000, 
+                "advance": 3000,
+                "attendance": "Present"
+            }
+        ],
+        "expenses": [
+            {
+                "id": 1, 
+                "category": "Electricity Bill", 
+                "amount": 4500, 
+                "date": "2026-06-01"
+            }
+        ]
     }
     
     # Local fallback or testing
@@ -63,7 +106,7 @@ def save_data(data):
     encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     payload = {
-        "message": "Auto-sync gymos data entry update with interlinked staff",
+        "message": "Auto-sync gymos blueprint upgrade update",
         "content": encoded_content,
         "branch": GITHUB_BRANCH
     }
@@ -108,7 +151,8 @@ def index():
     default_action = "members" if role == "employee" else "dashboard"
     action = request.args.get("action", default_action)
     
-    if role == "employee" and action in ["dashboard", "staff", "expenses"]:
+    # Restrict employee from admin-only sections
+    if role == "employee" and action in ["dashboard", "staff", "expenses", "leads"]:
         action = "members"
 
     if request.method == "POST":
@@ -122,13 +166,44 @@ def index():
                 "plan": request.form.get("plan"),
                 "scheme": request.form.get("scheme", "Standard"),
                 "amount": int(request.form.get("amount", 0)),
+                "dues": int(request.form.get("dues", 0)),
                 "pt_trainer": request.form.get("pt_trainer", "None"),
                 "pt_amount": int(request.form.get("pt_amount", 0)),
-                "status": "Active"
+                "status": "Active",
+                "start_date": request.form.get("start_date", str(datetime.now().date())),
+                "end_date": request.form.get("end_date", str(datetime.now().date() + timedelta(days=365)))
             }
             data["members"].append(new_member)
             save_data(data)
             return redirect(url_for("index", action="members"))
+
+        elif form_type == "lifecycle_update":
+            m_id = int(request.form.get("member_id"))
+            action_type = request.form.get("lifecycle_action")
+            for m in data["members"]:
+                if m["id"] == m_id:
+                    if action_type == "freeze":
+                        m["status"] = "Frozen"
+                    elif action_type == "activate":
+                        m["status"] = "Active"
+                    elif action_type == "transfer":
+                        m["name"] = request.form.get("new_holder_name")
+                        m["phone"] = request.form.get("new_holder_phone")
+            save_data(data)
+            return redirect(url_for("index", action="members"))
+
+        elif form_type == "add_lead":
+            new_lead = {
+                "id": len(data["leads"]) + 1,
+                "name": request.form.get("name"),
+                "phone": request.form.get("phone"),
+                "source": request.form.get("source"),
+                "status": request.form.get("status"),
+                "follow_up_date": request.form.get("follow_up_date")
+            }
+            data["leads"].append(new_lead)
+            save_data(data)
+            return redirect(url_for("index", action="leads"))
 
         elif role == "admin":
             if form_type == "add_staff":
@@ -138,7 +213,8 @@ def index():
                     "phone": request.form.get("phone"),
                     "address": request.form.get("address"),
                     "base_salary": int(request.form.get("base_salary", 0)),
-                    "advance": int(request.form.get("advance", 0))
+                    "advance": int(request.form.get("advance", 0)),
+                    "attendance": request.form.get("attendance", "Present")
                 }
                 data["staff"].append(new_staff)
                 save_data(data)
@@ -156,6 +232,7 @@ def index():
                 return redirect(url_for("index", action="expenses"))
 
     total_revenue = sum(m["amount"] + m["pt_amount"] for m in data["members"])
+    total_dues = sum(m["dues"] for m in data["members"])
     total_salaries = sum(s["base_salary"] for s in data["staff"])
     total_advances = sum(s["advance"] for s in data["staff"])
     total_expenses = sum(e["amount"] for e in data["expenses"])
@@ -171,8 +248,9 @@ def index():
         data=data, 
         action=action, 
         role=role,
-        sources_status="Gyms" if GITHUB_TOKEN else "Local JSON Mode",
+        sources_status="GitHub API Synced" if GITHUB_TOKEN else "Local JSON Mode",
         total_revenue=total_revenue,
+        total_dues=total_dues,
         total_salaries=total_salaries,
         total_advances=total_advances,
         total_expenses=total_expenses,
@@ -189,6 +267,9 @@ def delete_item(category, item_id):
     if category == "member":
         data["members"] = [m for m in data["members"] if m["id"] != item_id]
         redirect_action = "members"
+    elif category == "lead":
+        data["leads"] = [l for l in data["leads"] if l["id"] != item_id]
+        redirect_action = "leads"
     elif category == "staff":
         data["staff"] = [s for s in data["staff"] if s["id"] != item_id]
         redirect_action = "staff"
@@ -211,7 +292,7 @@ LOGIN_HTML = """
 <body class="bg-gray-950 text-white flex items-center justify-center h-screen px-4">
     <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-800">
         <h2 class="text-3xl font-black text-center mb-2 text-emerald-400">💪 GymOS CRM</h2>
-        <p class="text-xs text-gray-400 text-center mb-6">Cloud & GitHub Synced Management System</p>
+        <p class="text-xs text-gray-400 text-center mb-6">Complete Blueprint Management System</p>
         
         {% if error %}
             <div class="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-xl mb-4 text-xs text-center">{{ error }}</div>
@@ -261,11 +342,12 @@ DASHBOARD_HTML = """
             <nav class="space-y-2 flex-1">
                 {% if role == 'admin' %}
                 <a href="/?action=dashboard" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'dashboard' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">📊 P&L Dashboard</a>
+                <a href="/?action=leads" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'leads' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">🎯 Prospect & Leads</a>
                 {% endif %}
-                <a href="/?action=members" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'members' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👥 Members & Schemes</a>
+                <a href="/?action=members" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'members' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👥 Members & Lifecycle</a>
                 {% if role == 'admin' %}
-                <a href="/?action=staff" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'staff' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👔 Staff Payroll</a>
-                <a href="/?action=expenses" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'expenses' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">💡 Utilities & Expenses</a>
+                <a href="/?action=staff" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'staff' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">👔 Staff Payroll & Attn</a>
+                <a href="/?action=expenses" class="block py-2.5 px-4 rounded-xl font-semibold transition {% if action == 'expenses' %}bg-emerald-500/10 text-emerald-400{% else %}text-gray-400 hover:bg-gray-800{% endif %}">💡 Expenses Ledger</a>
                 {% endif %}
                 <a href="/logout" class="block py-2.5 px-4 rounded-xl font-semibold text-red-400 hover:bg-red-500/10 transition mt-8">🚪 Log Out</a>
             </nav>
@@ -283,6 +365,7 @@ DASHBOARD_HTML = """
             <div class="flex md:hidden bg-gray-900 p-2 overflow-x-auto space-x-2 border-b border-gray-800 shrink-0">
                 {% if role == 'admin' %}
                 <a href="/?action=dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'dashboard' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Dashboard</a>
+                <a href="/?action=leads" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'leads' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Leads</a>
                 {% endif %}
                 <a href="/?action=members" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'members' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Members</a>
                 {% if role == 'admin' %}
@@ -296,34 +379,38 @@ DASHBOARD_HTML = """
                 
                 {% if action == 'dashboard' and role == 'admin' %}
                 <div class="space-y-6">
-                    <h2 class="text-2xl font-black text-white">📊 Master Financial Dashboard</h2>
+                    <h2 class="text-2xl font-black text-white">📊 Master Financial Dashboard & P&L</h2>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
                             <p class="text-xs text-gray-400 font-bold">Total Revenue</p>
-                            <h3 class="text-2xl font-black text-emerald-400 mt-1">₹{{ total_revenue }}</h3>
+                            <h3 class="text-xl font-black text-emerald-400 mt-1">₹{{ total_revenue }}</h3>
                         </div>
                         <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
-                            <p class="text-xs text-gray-400 font-bold">Total Salary & Advance</p>
-                            <h3 class="text-2xl font-black text-yellow-400 mt-1">₹{{ total_salaries + total_advances }}</h3>
+                            <p class="text-xs text-gray-400 font-bold">Pending Dues</p>
+                            <h3 class="text-xl font-black text-amber-400 mt-1">₹{{ total_dues }}</h3>
+                        </div>
+                        <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
+                            <p class="text-xs text-gray-400 font-bold">Salary & Advances</p>
+                            <h3 class="text-xl font-black text-yellow-400 mt-1">₹{{ total_salaries + total_advances }}</h3>
                         </div>
                         <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
                             <p class="text-xs text-gray-400 font-bold">Total Expenses</p>
-                            <h3 class="text-2xl font-black text-red-400 mt-1">₹{{ total_expenses }}</h3>
+                            <h3 class="text-xl font-black text-red-400 mt-1">₹{{ total_expenses }}</h3>
                         </div>
                         <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800 shadow-xl">
                             <p class="text-xs text-gray-400 font-bold">Net Profit (P&L)</p>
-                            <h3 class="text-2xl font-black text-blue-400 mt-1">₹{{ net_profit }}</h3>
+                            <h3 class="text-xl font-black text-blue-400 mt-1">₹{{ net_profit }}</h3>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl lg:col-span-2 flex flex-col justify-center">
-                            <h3 class="text-lg font-bold text-gray-200 mb-4">💡 Business Summary</h3>
+                            <h3 class="text-lg font-bold text-gray-200 mb-4">💡 Blueprint Business Insights</h3>
                             <ul class="space-y-3 text-sm text-gray-300">
                                 <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Active Members:</span> <strong class="text-emerald-400">{{ data.members|length }}</strong></li>
-                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Total Staff:</span> <strong class="text-yellow-400">{{ data.staff|length }}</strong></li>
-                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Total Advance Given:</span> <strong class="text-red-400">₹{{ total_advances }}</strong></li>
+                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Active Prospects / Leads:</span> <strong class="text-amber-400">{{ data.leads|length }}</strong></li>
+                                <li class="flex justify-between p-3 bg-gray-800/40 rounded-xl"><span>Total Staff Registered:</span> <strong class="text-yellow-400">{{ data.staff|length }}</strong></li>
                             </ul>
                         </div>
                         <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl flex flex-col items-center justify-center">
@@ -334,11 +421,86 @@ DASHBOARD_HTML = """
                         </div>
                     </div>
                 </div>
+
+                {% elif action == 'leads' and role == 'admin' %}
+                <div class="space-y-6">
+                    <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
+                        <h2 class="text-xl font-bold text-emerald-400 mb-4">🎯 Prospect & Lead Management</h2>
+                        <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <input type="hidden" name="form_type" value="add_lead">
+                            <div>
+                                <label class="text-xs text-gray-400">Prospect Name</label>
+                                <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Mobile Number</label>
+                                <input type="text" name="phone" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Marketing Source</label>
+                                <select name="source" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                                    <option value="Walk-In">Walk-In</option>
+                                    <option value="Instagram Ad">Instagram Ad</option>
+                                    <option value="Facebook Ad">Facebook Ad</option>
+                                    <option value="Direct Call">Direct Call</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Lead Status</label>
+                                <select name="status" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                                    <option value="Trial (3-Day)">Trial (3-Day)</option>
+                                    <option value="Trial (7-Day)">Trial (7-Day)</option>
+                                    <option value="Follow-Up Pending">Follow-Up Pending</option>
+                                    <option value="Converted">Converted</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Follow-up Date</label>
+                                <input type="date" name="follow_up_date" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div class="sm:flex items-end">
+                                <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Lead</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
+                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">📋 Leads & Trial Tracking</h3></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-gray-800/50 text-gray-400">
+                                        <th class="p-3">Name</th>
+                                        <th class="p-3">Phone</th>
+                                        <th class="p-3">Source</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3">Follow-up Date</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-800">
+                                    {% for l in data.leads %}
+                                    <tr class="hover:bg-gray-800/30">
+                                        <td class="p-3 font-semibold text-white">{{ l.name }}</td>
+                                        <td class="p-3 text-gray-300">{{ l.phone }}</td>
+                                        <td class="p-3 text-emerald-400">{{ l.source }}</td>
+                                        <td class="p-3 text-yellow-400">{{ l.status }}</td>
+                                        <td class="p-3 text-gray-300">{{ l.follow_up_date }}</td>
+                                        <td class="p-3 text-center">
+                                            <a href="/delete/lead/{{ l.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
                 
                 {% elif action == 'members' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-                        <h2 class="text-xl font-bold text-emerald-400 mb-4">➕ Add Member & Schemes (12+1 / PT)</h2>
+                        <h2 class="text-xl font-bold text-emerald-400 mb-4">➕ Add Member & Schemes (12+1 / PT & Dues)</h2>
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_member">
                             <div>
@@ -368,11 +530,15 @@ DASHBOARD_HTML = """
                                 </select>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Membership Fee (₹)</label>
+                                <label class="text-xs text-gray-400">Paid Fee (₹)</label>
                                 <input type="number" name="amount" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Personal Trainer (PT) - Interlinked from Staff</label>
+                                <label class="text-xs text-gray-400">Pending Dues (₹)</label>
+                                <input type="number" name="dues" value="0" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Personal Trainer (PT) - Interlinked</label>
                                 <select name="pt_trainer" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                                     <option value="None">None</option>
                                     {% for s in data.staff %}
@@ -384,8 +550,47 @@ DASHBOARD_HTML = """
                                 <label class="text-xs text-gray-400">PT Amount (₹)</label>
                                 <input type="number" name="pt_amount" value="0" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Start Date</label>
+                                <input type="date" name="start_date" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
                             <div class="sm:col-span-3">
-                                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Member Record</button>
+                                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Member Record & POS Receipt</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Lifecycle Management Form -->
+                    <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
+                        <h2 class="text-xl font-bold text-blue-400 mb-4">🔄 Membership Lifecycle (Freeze / Transfer)</h2>
+                        <form method="POST" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <input type="hidden" name="form_type" value="lifecycle_update">
+                            <div>
+                                <label class="text-xs text-gray-400">Select Member</label>
+                                <select name="member_id" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                                    {% for m in data.members %}
+                                    <option value="{{ m.id }}">{{ m.name }} ({{ m.status }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Action Type</label>
+                                <select name="lifecycle_action" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                                    <option value="freeze">Freeze Membership</option>
+                                    <option value="activate">Activate / Unfreeze</option>
+                                    <option value="transfer">Transfer Ownership</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">New Holder Name (If Transfer)</label>
+                                <input type="text" name="new_holder_name" placeholder="Optional" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">New Holder Phone</label>
+                                <input type="text" name="new_holder_phone" placeholder="Optional" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div class="sm:col-span-4">
+                                <button type="submit" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Apply Lifecycle Update</button>
                             </div>
                         </form>
                     </div>
@@ -399,8 +604,10 @@ DASHBOARD_HTML = """
                                         <th class="p-3">Name</th>
                                         <th class="p-3">Mobile</th>
                                         <th class="p-3">Plan / Scheme</th>
-                                        <th class="p-3">Fee</th>
+                                        <th class="p-3">Fee Paid</th>
+                                        <th class="p-3">Dues</th>
                                         <th class="p-3">PT Trainer</th>
+                                        <th class="p-3">Status</th>
                                         {% if role == 'admin' %}
                                         <th class="p-3 text-center">Action</th>
                                         {% endif %}
@@ -413,7 +620,9 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-gray-300">{{ m.phone }}</td>
                                         <td class="p-3 text-emerald-400">{{ m.plan }} <br><span class="text-xs text-yellow-400">({{ m.scheme }})</span></td>
                                         <td class="p-3 text-gray-200">₹{{ m.amount }}</td>
+                                        <td class="p-3 text-amber-400 font-bold">₹{{ m.dues }}</td>
                                         <td class="p-3 text-blue-300">{{ m.pt_trainer }} <br><span class="text-xs text-gray-400">(₹{{ m.pt_amount }})</span></td>
+                                        <td class="p-3"><span class="px-2 py-1 rounded text-xs {% if m.status == 'Active' %}bg-emerald-500/10 text-emerald-400{% else %}bg-amber-500/10 text-amber-400{% endif %}">{{ m.status }}</span></td>
                                         {% if role == 'admin' %}
                                         <td class="p-3 text-center">
                                             <a href="/delete/member/{{ m.id }}" onclick="return confirm('Confirm delete?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
@@ -430,8 +639,8 @@ DASHBOARD_HTML = """
                 {% elif action == 'staff' and role == 'admin' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-                        <h2 class="text-xl font-bold text-yellow-400 mb-4">👔 Staff & Advance Salary Management</h2>
-                        <form method="POST" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <h2 class="text-xl font-bold text-yellow-400 mb-4">👔 Staff Payroll, Attendance & Auto-Deduction</h2>
+                        <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_staff">
                             <div>
                                 <label class="text-xs text-gray-400">Staff Name & Role</label>
@@ -450,10 +659,17 @@ DASHBOARD_HTML = """
                                 <input type="number" name="base_salary" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Advance Taken (₹)</label>
+                                <label class="text-xs text-gray-400">Advance Taken (Auto-Deducted) (₹)</label>
                                 <input type="number" name="advance" value="0" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
-                            <div class="sm:col-span-2 lg:col-span-3">
+                            <div>
+                                <label class="text-xs text-gray-400">Attendance Status</label>
+                                <select name="attendance" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                                    <option value="Present">Present / Active</option>
+                                    <option value="On Leave">On Leave</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-3">
                                 <button type="submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Staff Record</button>
                             </div>
                         </form>
@@ -469,8 +685,9 @@ DASHBOARD_HTML = """
                                         <th class="p-3">Mobile</th>
                                         <th class="p-3">Address</th>
                                         <th class="p-3">Base Salary</th>
-                                        <th class="p-3">Advance</th>
+                                        <th class="p-3">Advance (Minus)</th>
                                         <th class="p-3">Net Pay</th>
+                                        <th class="p-3">Attendance</th>
                                         <th class="p-3 text-center">Action</th>
                                     </tr>
                                 </thead>
@@ -483,6 +700,7 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-gray-200">₹{{ s.base_salary }}</td>
                                         <td class="p-3 text-red-400">₹{{ s.advance }}</td>
                                         <td class="p-3 text-emerald-400 font-bold">₹{{ s.base_salary - s.advance }}</td>
+                                        <td class="p-3 text-yellow-300">{{ s.attendance }}</td>
                                         <td class="p-3 text-center">
                                             <a href="/delete/staff/{{ s.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
@@ -497,7 +715,7 @@ DASHBOARD_HTML = """
                 {% elif action == 'expenses' and role == 'admin' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-                        <h2 class="text-xl font-bold text-red-400 mb-4">💡 Utilities & Gym Expenses</h2>
+                        <h2 class="text-xl font-bold text-red-400 mb-4">💡 Utilities & Gym Expenses Ledger</h2>
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_expense">
                             <div>
