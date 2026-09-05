@@ -25,14 +25,6 @@
     ],
     "staff": [
         {
-            "id": 1,
-            "name": "salim",
-            "phone": "7894561230",
-            "address": "giohhh",
-            "base_salary": 2000,
-            "advance": 0
-        },
-        {
             "id": 2,
             "name": "Shivam bhai ",
             "phone": "1234567891",
@@ -47,6 +39,16 @@
             "category": "Electricity Bill",
             "amount": 4500,
             "date": "2026-06-01"
+        }
+    ],
+    "leads": [
+        {
+            "id": 1,
+            "name": "Vikas Verma",
+            "phone": "9123456789",
+            "source": "Instagram Ad",
+            "status": "Trial (3-Day)",
+            "follow_up_date": "2026-06-10"
         }
     ]
 }
