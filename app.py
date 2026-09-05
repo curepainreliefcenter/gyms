@@ -403,12 +403,12 @@ LOGIN_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Orbitedgemedia - Login</title>
+    <title>Gym OEM - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-950 text-white flex items-center justify-center h-screen px-4">
     <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-800">
-        <h2 class="text-3xl font-black text-center mb-2 text-emerald-400">💪 Gym Orbitedgemedia</h2>
+        <h2 class="text-3xl font-black text-center mb-2 text-emerald-400">💪 Gym OEM</h2>
         <p class="text-xs text-gray-400 text-center mb-6">Complete Management System</p>
         
         {% if error %}
@@ -442,7 +442,7 @@ DASHBOARD_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Orbitedgemedia CRM Suite</title>
+    <title>Gym OEM CRM Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -470,7 +470,7 @@ DASHBOARD_HTML = """
 <body class="bg-gray-950 text-gray-100 font-sans">
     <div class="flex h-screen overflow-hidden">
         <div class="hidden md:flex flex-col w-64 bg-gray-900 border-r border-gray-800 p-6">
-            <h1 class="text-xl font-black text-emerald-400 mb-1 tracking-wider">💪 Gym Orbitedgemedia</h1>
+            <h1 class="text-xl font-black text-emerald-400 mb-1 tracking-wider">💪 Gym OEM</h1>
             <p class="text-xs text-gray-400 mb-6 capitalize">Role: <span class="text-emerald-400 font-bold">{{ role }}</span></p>
             <div class="mb-6 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-[10px] text-emerald-400 font-mono text-center">
                 🟢 {{ sources_status }}
@@ -494,7 +494,7 @@ DASHBOARD_HTML = """
 
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center md:hidden">
-                <h1 class="text-sm font-black text-emerald-400">💪 Gym Orbitedgemedia</h1>
+                <h1 class="text-sm font-black text-emerald-400">💪 Gym OEM</h1>
                 <a href="/logout" class="text-xs text-red-400 font-bold bg-red-500/10 px-3 py-1.5 rounded-lg">Log Out</a>
             </header>
 
@@ -519,7 +519,7 @@ DASHBOARD_HTML = """
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
                         <div>
                             <h2 class="text-2xl font-black text-white">📊 Master Financial Dashboard & P&L</h2>
-                            <p class="text-xs text-gray-400 mt-1">Real-time financial performance breakdown for Gym Orbitedgemedia.</p>
+                            <p class="text-xs text-gray-400 mt-1">Real-time financial performance breakdown for Gym OEM.</p>
                         </div>
                         <button onclick="window.print()" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-xs shadow-lg cursor-pointer">🖨️ Print Dashboard Report</button>
                     </div>
@@ -654,9 +654,9 @@ DASHBOARD_HTML = """
                                         <td class="p-3 text-yellow-400">{{ l.status }}</td>
                                         <td class="p-3 text-gray-300">{{ l.follow_up_date }}</td>
                                         <td class="p-3 text-center space-x-1 no-print">
-                                            <a href="https://wa.me/91{{ l.phone }}?text=Hello%20{{ l.name }},%20welcome%20to%20Gym%20Orbitedgemedia!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
+                                            <a href="https://wa.me/91{{ l.phone }}?text=Hello%20{{ l.name }},%20welcome%20to%20Gym%20OEM!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
                                             {% if l.email %}
-                                            <a href="mailto:{{ l.email }}?subject=Gym%20Orbitedgemedia%20Trial" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
+                                            <a href="mailto:{{ l.email }}?subject=Gym%20OEM%20Trial" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
                                             {% endif %}
                                         </td>
                                         <td class="p-3 text-center space-x-1 no-print">
@@ -829,9 +829,9 @@ DASHBOARD_HTML = """
                                         </td>
                                         <td class="p-3"><span class="px-2 py-1 rounded text-xs {% if m.status == 'Active' %}bg-emerald-500/10 text-emerald-400{% else %}bg-amber-500/10 text-amber-400{% endif %}">{{ m.status }}</span></td>
                                         <td class="p-3 text-center space-x-1 no-print">
-                                            <a href="https://wa.me/91{{ m.phone }}?text=Hello%20{{ m.name }},%20reminder%20from%20Gym%20Orbitedgemedia!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
+                                            <a href="https://wa.me/91{{ m.phone }}?text=Hello%20{{ m.name }},%20reminder%20from%20Gym%20OEM!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
                                             {% if m.email %}
-                                            <a href="mailto:{{ m.email }}?subject=Gym%20Orbitedgemedia%20Membership" class="text-blue-400 bg-blue-500/10 px-2 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
+                                            <a href="mailto:{{ m.email }}?subject=Gym%20OEM%20Membership" class="text-blue-400 bg-blue-500/10 px-2 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
                                             {% endif %}
                                         </td>
                                         <td class="p-3 text-center space-x-1 no-print">
@@ -1022,9 +1022,9 @@ DASHBOARD_HTML = """
                                             <button type="button" onclick='openOfferModal({{ s|tojson|safe }})' class="text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer inline-block">📜 Generate Offer Letter</button>
                                         </td>
                                         <td class="p-3 text-center space-x-1 no-print">
-                                            <a href="https://wa.me/91{{ s.phone }}?text=Hello%20{{ s.name }},%20message%20from%20Gym%20Orbitedgemedia!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
+                                            <a href="https://wa.me/91{{ s.phone }}?text=Hello%20{{ s.name }},%20message%20from%20Gym%20OEM!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
                                             {% if s.email %}
-                                            <a href="mailto:{{ s.email }}?subject=Gym%20Orbitedgemedia%20Staff" class="text-blue-400 bg-blue-500/10 px-2 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
+                                            <a href="mailto:{{ s.email }}?subject=Gym%20OEM%20Staff" class="text-blue-400 bg-blue-500/10 px-2 py-1 rounded text-xs font-bold inline-block">📧 Email</a>
                                             {% endif %}
                                         </td>
                                         <td class="p-3 text-center space-x-1 no-print">
