@@ -16,5 +16,15 @@
         }
     ],
     "expenses": [],
-    "leads": []
+    "leads": [
+        {
+            "id": 1,
+            "name": "Cure Pain Relief Center",
+            "phone": "7894561230",
+            "email": "curepainreliefcenter@gmail.com",
+            "source": "Walk-In",
+            "status": "Trial (3-Day)",
+            "follow_up_date": "2026-09-10"
+        }
+    ]
 }
