@@ -63,7 +63,6 @@ def load_data():
         ]
     }
     
-    # Local fallback or testing
     if not GITHUB_TOKEN or not GITHUB_REPO:
         if not os.path.exists(FILE_PATH):
             with open(FILE_PATH, "w", encoding="utf-8") as f:
@@ -74,7 +73,6 @@ def load_data():
         except:
             return default_data
 
-    # GitHub API Fetching
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{FILE_PATH}"
     headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "vnd.github+json"}
     response = requests.get(url, headers=headers)
@@ -151,7 +149,6 @@ def index():
     default_action = "members" if role == "employee" else "dashboard"
     action = request.args.get("action", default_action)
     
-    # Restrict employee from admin-only sections
     if role == "employee" and action in ["dashboard", "staff", "expenses", "leads"]:
         action = "members"
 
@@ -243,6 +240,9 @@ def index():
         p = m["plan"]
         plans_count[p] = plans_count.get(p, 0) + 1
 
+    plan_labels = list(plans_count.keys())
+    plan_values = list(plans_count.values())
+
     return render_template_string(
         DASHBOARD_HTML, 
         data=data, 
@@ -255,7 +255,8 @@ def index():
         total_advances=total_advances,
         total_expenses=total_expenses,
         net_profit=net_profit,
-        plans_count=plans_count
+        plan_labels=plan_labels,
+        plan_values=plan_values
     )
 
 @app.route("/delete/<string:category>/<int:item_id>")
@@ -331,7 +332,6 @@ DASHBOARD_HTML = """
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans">
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar Desktop -->
         <div class="hidden md:flex flex-col w-64 bg-gray-900 border-r border-gray-800 p-6">
             <h1 class="text-2xl font-black text-emerald-400 mb-1 tracking-wider">💪 GymOS</h1>
             <p class="text-xs text-gray-400 mb-6 capitalize">Role: <span class="text-emerald-400 font-bold">{{ role }}</span></p>
@@ -353,15 +353,12 @@ DASHBOARD_HTML = """
             </nav>
         </div>
 
-        <!-- Main Workspace -->
         <div class="flex-1 flex flex-col overflow-y-auto">
-            <!-- Mobile Header -->
             <header class="bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center md:hidden">
                 <h1 class="text-lg font-black text-emerald-400">💪 GymOS <span class="text-[10px] text-emerald-300 font-mono">({{ sources_status }})</span></h1>
                 <a href="/logout" class="text-xs text-red-400 font-bold bg-red-500/10 px-3 py-1.5 rounded-lg">Log Out</a>
             </header>
 
-            <!-- Mobile Navbar -->
             <div class="flex md:hidden bg-gray-900 p-2 overflow-x-auto space-x-2 border-b border-gray-800 shrink-0">
                 {% if role == 'admin' %}
                 <a href="/?action=dashboard" class="px-3 py-1.5 text-xs font-semibold rounded-lg {% if action == 'dashboard' %}bg-emerald-500 text-gray-950{% else %}bg-gray-800 text-gray-300{% endif %} whitespace-nowrap">Dashboard</a>
@@ -374,7 +371,6 @@ DASHBOARD_HTML = """
                 {% endif %}
             </div>
 
-            <!-- Content Area -->
             <div class="p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
                 
                 {% if action == 'dashboard' and role == 'admin' %}
@@ -560,7 +556,6 @@ DASHBOARD_HTML = """
                         </form>
                     </div>
 
-                    <!-- Lifecycle Management Form -->
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
                         <h2 class="text-xl font-bold text-blue-400 mb-4">🔄 Membership Lifecycle (Freeze / Transfer)</h2>
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -776,9 +771,9 @@ DASHBOARD_HTML = """
         new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: {{ plans_count.keys() | list | tojson }},
+                labels: {{ plan_labels | tojson }},
                 datasets: [{
-                    data: {{ plans_count.values() | list | tojson }},
+                    data: {{ plan_values | tojson }},
                     backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'],
                     borderWidth: 0
                 }]
