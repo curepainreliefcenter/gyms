@@ -21,6 +21,8 @@ def load_data():
                 "id": 1, 
                 "name": "Rahul Sharma", 
                 "phone": "9876543210", 
+                "email": "rahul@example.com",
+                "address": "Andheri West, Mumbai",
                 "plan": "Gold (12 Months)", 
                 "scheme": "12+1 Free", 
                 "amount": 15000, 
@@ -37,9 +39,10 @@ def load_data():
                 "id": 1,
                 "name": "Vikas Verma",
                 "phone": "9123456789",
+                "email": "vikas@example.com",
                 "source": "Instagram Ad",
                 "status": "Trial (3-Day)",
-                "follow_up_date": "2026-06-10"
+                "follow_up_date": "2026-09-10"
             }
         ],
         "staff": [
@@ -47,6 +50,7 @@ def load_data():
                 "id": 1, 
                 "name": "Amit (Trainer)", 
                 "phone": "9876543210", 
+                "email": "amit@gym.com",
                 "address": "Main Street, Gym Area", 
                 "base_salary": 15000, 
                 "advance": 3000,
@@ -58,7 +62,7 @@ def load_data():
                 "id": 1, 
                 "category": "Electricity Bill", 
                 "amount": 4500, 
-                "date": "2026-06-01"
+                "date": "2026-09-01"
             }
         ]
     }
@@ -70,7 +74,6 @@ def load_data():
         try:
             with open(FILE_PATH, "r", encoding="utf-8") as f:
                 d = json.load(f)
-                # Ensure all required keys exist to prevent KeyErrors
                 for key in default_data:
                     if key not in d:
                         d[key] = default_data[key]
@@ -113,7 +116,7 @@ def save_data(data):
     encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     payload = {
-        "message": "Auto-sync gymos blueprint upgrade update",
+        "message": "Gym Orbitedgemedia invoice PDF and edit options update",
         "content": encoded_content,
         "branch": GITHUB_BRANCH
     }
@@ -155,7 +158,6 @@ def index():
     role = session.get("role", "employee")
     data = load_data()
     
-    # Ensure keys exist safely
     data.setdefault("members", [])
     data.setdefault("leads", [])
     data.setdefault("staff", [])
@@ -172,9 +174,11 @@ def index():
         
         if form_type == "add_member":
             new_member = {
-                "id": len(data["members"]) + 1,
+                "id": max([m["id"] for m in data["members"]], default=0) + 1,
                 "name": request.form.get("name"),
                 "phone": request.form.get("phone"),
+                "email": request.form.get("email"),
+                "address": request.form.get("address"),
                 "plan": request.form.get("plan"),
                 "scheme": request.form.get("scheme", "Standard"),
                 "amount": int(request.form.get("amount", 0)),
@@ -186,6 +190,26 @@ def index():
                 "end_date": request.form.get("end_date", str(datetime.now().date() + timedelta(days=365)))
             }
             data["members"].append(new_member)
+            save_data(data)
+            return redirect(url_for("index", action="members"))
+
+        elif form_type == "edit_member":
+            m_id = int(request.form.get("member_id"))
+            for m in data["members"]:
+                if m["id"] == m_id:
+                    m["name"] = request.form.get("name")
+                    m["phone"] = request.form.get("phone")
+                    m["email"] = request.form.get("email")
+                    m["address"] = request.form.get("address")
+                    m["plan"] = request.form.get("plan")
+                    m["scheme"] = request.form.get("scheme")
+                    m["amount"] = int(request.form.get("amount", 0))
+                    m["dues"] = int(request.form.get("dues", 0))
+                    m["pt_trainer"] = request.form.get("pt_trainer")
+                    m["pt_amount"] = int(request.form.get("pt_amount", 0))
+                    m["start_date"] = request.form.get("start_date")
+                    m["end_date"] = request.form.get("end_date")
+                    m["status"] = request.form.get("status")
             save_data(data)
             return redirect(url_for("index", action="members"))
 
@@ -201,14 +225,17 @@ def index():
                     elif action_type == "transfer":
                         m["name"] = request.form.get("new_holder_name")
                         m["phone"] = request.form.get("new_holder_phone")
+                        m["email"] = request.form.get("new_holder_email", m["email"])
+                        m["address"] = request.form.get("new_holder_address", m["address"])
             save_data(data)
             return redirect(url_for("index", action="members"))
 
         elif form_type == "add_lead":
             new_lead = {
-                "id": len(data["leads"]) + 1,
+                "id": max([l["id"] for l in data["leads"]], default=0) + 1,
                 "name": request.form.get("name"),
                 "phone": request.form.get("phone"),
+                "email": request.form.get("email"),
                 "source": request.form.get("source"),
                 "status": request.form.get("status"),
                 "follow_up_date": request.form.get("follow_up_date")
@@ -217,12 +244,26 @@ def index():
             save_data(data)
             return redirect(url_for("index", action="leads"))
 
+        elif form_type == "edit_lead":
+            l_id = int(request.form.get("lead_id"))
+            for l in data["leads"]:
+                if l["id"] == l_id:
+                    l["name"] = request.form.get("name")
+                    l["phone"] = request.form.get("phone")
+                    l["email"] = request.form.get("email")
+                    l["source"] = request.form.get("source")
+                    l["status"] = request.form.get("status")
+                    l["follow_up_date"] = request.form.get("follow_up_date")
+            save_data(data)
+            return redirect(url_for("index", action="leads"))
+
         elif role == "admin":
             if form_type == "add_staff":
                 new_staff = {
-                    "id": len(data["staff"]) + 1,
+                    "id": max([s["id"] for s in data["staff"]], default=0) + 1,
                     "name": request.form.get("name"),
                     "phone": request.form.get("phone"),
+                    "email": request.form.get("email"),
                     "address": request.form.get("address"),
                     "base_salary": int(request.form.get("base_salary", 0)),
                     "advance": int(request.form.get("advance", 0)),
@@ -232,14 +273,38 @@ def index():
                 save_data(data)
                 return redirect(url_for("index", action="staff"))
 
+            elif form_type == "edit_staff":
+                s_id = int(request.form.get("staff_id"))
+                for s in data["staff"]:
+                    if s["id"] == s_id:
+                        s["name"] = request.form.get("name")
+                        s["phone"] = request.form.get("phone")
+                        s["email"] = request.form.get("email")
+                        s["address"] = request.form.get("address")
+                        s["base_salary"] = int(request.form.get("base_salary", 0))
+                        s["advance"] = int(request.form.get("advance", 0))
+                        s["attendance"] = request.form.get("attendance")
+                save_data(data)
+                return redirect(url_for("index", action="staff"))
+
             elif form_type == "add_expense":
                 new_exp = {
-                    "id": len(data["expenses"]) + 1,
+                    "id": max([e["id"] for e in data["expenses"]], default=0) + 1,
                     "category": request.form.get("category"),
                     "amount": int(request.form.get("amount", 0)),
                     "date": request.form.get("date")
                 }
                 data["expenses"].append(new_exp)
+                save_data(data)
+                return redirect(url_for("index", action="expenses"))
+
+            elif form_type == "edit_expense":
+                e_id = int(request.form.get("expense_id"))
+                for e in data["expenses"]:
+                    if e["id"] == e_id:
+                        e["category"] = request.form.get("category")
+                        e["amount"] = int(request.form.get("amount", 0))
+                        e["date"] = request.form.get("date")
                 save_data(data)
                 return redirect(url_for("index", action="expenses"))
 
@@ -307,12 +372,12 @@ LOGIN_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymOS - Login</title>
+    <title>Gym Orbitedgemedia - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-950 text-white flex items-center justify-center h-screen px-4">
     <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-800">
-        <h2 class="text-3xl font-black text-center mb-2 text-emerald-400">💪 GymOS CRM</h2>
+        <h2 class="text-3xl font-black text-center mb-2 text-emerald-400">💪 Gym Orbitedgemedia</h2>
         <p class="text-xs text-gray-400 text-center mb-6">Complete Blueprint Management System</p>
         
         {% if error %}
@@ -346,14 +411,35 @@ DASHBOARD_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymOS CRM Suite</title>
+    <title>Gym Orbitedgemedia CRM Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #invoiceModal, #invoiceModal * {
+                visibility: visible;
+            }
+            #invoiceModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans">
     <div class="flex h-screen overflow-hidden">
         <div class="hidden md:flex flex-col w-64 bg-gray-900 border-r border-gray-800 p-6">
-            <h1 class="text-2xl font-black text-emerald-400 mb-1 tracking-wider">💪 GymOS</h1>
+            <h1 class="text-xl font-black text-emerald-400 mb-1 tracking-wider">💪 Gym Orbitedgemedia</h1>
             <p class="text-xs text-gray-400 mb-6 capitalize">Role: <span class="text-emerald-400 font-bold">{{ role }}</span></p>
             <div class="mb-6 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-[10px] text-emerald-400 font-mono text-center">
                 🟢 {{ sources_status }}
@@ -375,7 +461,7 @@ DASHBOARD_HTML = """
 
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center md:hidden">
-                <h1 class="text-lg font-black text-emerald-400">💪 GymOS <span class="text-[10px] text-emerald-300 font-mono">({{ sources_status }})</span></h1>
+                <h1 class="text-sm font-black text-emerald-400">💪 Gym Orbitedgemedia</h1>
                 <a href="/logout" class="text-xs text-red-400 font-bold bg-red-500/10 px-3 py-1.5 rounded-lg">Log Out</a>
             </header>
 
@@ -453,6 +539,10 @@ DASHBOARD_HTML = """
                                 <input type="text" name="phone" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
+                                <label class="text-xs text-gray-400">Email Address</label>
+                                <input type="email" name="email" placeholder="Optional" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div>
                                 <label class="text-xs text-gray-400">Marketing Source</label>
                                 <select name="source" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                                     <option value="Walk-In">Walk-In</option>
@@ -471,10 +561,10 @@ DASHBOARD_HTML = """
                                 </select>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Follow-up Date</label>
+                                <label class="text-xs text-gray-400">Follow-up Date (Calendar Picker)</label>
                                 <input type="date" name="follow_up_date" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
-                            <div class="sm:flex items-end">
+                            <div class="sm:col-span-3">
                                 <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Lead</button>
                             </div>
                         </form>
@@ -487,23 +577,27 @@ DASHBOARD_HTML = """
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
                                         <th class="p-3">Name</th>
-                                        <th class="p-3">Phone</th>
+                                        <th class="p-3">Contact Info</th>
                                         <th class="p-3">Source</th>
                                         <th class="p-3">Status</th>
                                         <th class="p-3">Follow-up Date</th>
-                                        <th class="p-3 text-center">Action</th>
+                                        <th class="p-3 text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
                                     {% for l in data.leads %}
                                     <tr class="hover:bg-gray-800/30">
                                         <td class="p-3 font-semibold text-white">{{ l.name }}</td>
-                                        <td class="p-3 text-gray-300">{{ l.phone }}</td>
+                                        <td class="p-3 text-gray-300">
+                                            📱 {{ l.phone }}<br>
+                                            <span class="text-xs text-gray-400">📧 {{ l.email or 'N/A' }}</span>
+                                        </td>
                                         <td class="p-3 text-emerald-400">{{ l.source }}</td>
                                         <td class="p-3 text-yellow-400">{{ l.status }}</td>
                                         <td class="p-3 text-gray-300">{{ l.follow_up_date }}</td>
-                                        <td class="p-3 text-center">
-                                            <a href="/delete/lead/{{ l.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
+                                        <td class="p-3 text-center space-x-2">
+                                            <button onclick="openEditModal('lead', {{ l|tojson|safe }})" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold">Edit</button>
+                                            <a href="/delete/lead/{{ l.id }}" onclick="return confirm('Confirm delete lead?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -516,7 +610,7 @@ DASHBOARD_HTML = """
                 {% elif action == 'members' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-                        <h2 class="text-xl font-bold text-emerald-400 mb-4">➕ Add Member & Schemes (12+1 / PT & Dues)</h2>
+                        <h2 class="text-xl font-bold text-emerald-400 mb-4">➕ Add Member (Email, Address, Start & Expiry Calendar)</h2>
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_member">
                             <div>
@@ -526,6 +620,14 @@ DASHBOARD_HTML = """
                             <div>
                                 <label class="text-xs text-gray-400">Mobile Number</label>
                                 <input type="text" name="phone" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Email Address</label>
+                                <input type="email" name="email" required placeholder="member@example.com" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="text-xs text-gray-400">Residential Address</label>
+                                <input type="text" name="address" required placeholder="Full street address, area" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
                                 <label class="text-xs text-gray-400">Membership Plan</label>
@@ -554,7 +656,7 @@ DASHBOARD_HTML = """
                                 <input type="number" name="dues" value="0" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Personal Trainer (PT) - Interlinked</label>
+                                <label class="text-xs text-gray-400">Personal Trainer (PT)</label>
                                 <select name="pt_trainer" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                                     <option value="None">None</option>
                                     {% for s in data.staff %}
@@ -567,11 +669,15 @@ DASHBOARD_HTML = """
                                 <input type="number" name="pt_amount" value="0" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Start Date</label>
-                                <input type="date" name="start_date" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                                <label class="text-xs text-gray-400">Start Date (Calendar Select)</label>
+                                <input type="date" name="start_date" id="add_start_date" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" onchange="calcExpiry()">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">End / Expiry Date (Calendar Select)</label>
+                                <input type="date" name="end_date" id="add_end_date" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div class="sm:col-span-3">
-                                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Member Record & POS Receipt</button>
+                                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Member Record</button>
                             </div>
                         </form>
                     </div>
@@ -597,7 +703,7 @@ DASHBOARD_HTML = """
                                 </select>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">New Holder Name (If Transfer)</label>
+                                <label class="text-xs text-gray-400">New Holder Name (Transfer)</label>
                                 <input type="text" name="new_holder_name" placeholder="Optional" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
@@ -611,38 +717,51 @@ DASHBOARD_HTML = """
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
-                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">👥 Members List</h3></div>
+                        <div class="p-4 border-b border-gray-800"><h3 class="font-bold text-gray-200">👥 Members Directory</h3></div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
-                                        <th class="p-3">Name</th>
-                                        <th class="p-3">Mobile</th>
+                                        <th class="p-3">Member Details</th>
+                                        <th class="p-3">Contact & Address</th>
                                         <th class="p-3">Plan / Scheme</th>
-                                        <th class="p-3">Fee Paid</th>
-                                        <th class="p-3">Dues</th>
-                                        <th class="p-3">PT Trainer</th>
+                                        <th class="p-3">Fee / Dues</th>
+                                        <th class="p-3">Start & Expiry Dates</th>
                                         <th class="p-3">Status</th>
-                                        {% if role == 'admin' %}
-                                        <th class="p-3 text-center">Action</th>
-                                        {% endif %}
+                                        <th class="p-3 text-center">Actions / Invoice</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
                                     {% for m in data.members %}
                                     <tr class="hover:bg-gray-800/30">
-                                        <td class="p-3 font-semibold text-white">{{ m.name }}</td>
-                                        <td class="p-3 text-gray-300">{{ m.phone }}</td>
-                                        <td class="p-3 text-emerald-400">{{ m.plan }} <br><span class="text-xs text-yellow-400">({{ m.scheme }})</span></td>
-                                        <td class="p-3 text-gray-200">₹{{ m.amount }}</td>
-                                        <td class="p-3 text-amber-400 font-bold">₹{{ m.dues }}</td>
-                                        <td class="p-3 text-blue-300">{{ m.pt_trainer }} <br><span class="text-xs text-gray-400">(₹{{ m.pt_amount }})</span></td>
-                                        <td class="p-3"><span class="px-2 py-1 rounded text-xs {% if m.status == 'Active' %}bg-emerald-500/10 text-emerald-400{% else %}bg-amber-500/10 text-amber-400{% endif %}">{{ m.status }}</span></td>
-                                        {% if role == 'admin' %}
-                                        <td class="p-3 text-center">
-                                            <a href="/delete/member/{{ m.id }}" onclick="return confirm('Confirm delete?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
+                                        <td class="p-3 font-semibold text-white">
+                                            {{ m.name }}
+                                            {% if m.pt_trainer != 'None' %}
+                                            <br><span class="text-xs text-blue-400">PT: {{ m.pt_trainer }}</span>
+                                            {% endif %}
                                         </td>
-                                        {% endif %}
+                                        <td class="p-3 text-gray-300 text-xs">
+                                            📱 {{ m.phone }}<br>
+                                            📧 {{ m.email or 'N/A' }}<br>
+                                            🏠 {{ m.address or 'N/A' }}
+                                        </td>
+                                        <td class="p-3 text-emerald-400">{{ m.plan }} <br><span class="text-xs text-yellow-400">({{ m.scheme }})</span></td>
+                                        <td class="p-3 text-gray-200">
+                                            Paid: ₹{{ m.amount }}<br>
+                                            <span class="text-amber-400 font-bold">Dues: ₹{{ m.dues }}</span>
+                                        </td>
+                                        <td class="p-3 text-xs text-gray-300">
+                                            🟢 Starts: {{ m.start_date }}<br>
+                                            🔴 Expires: {{ m.end_date }}
+                                        </td>
+                                        <td class="p-3"><span class="px-2 py-1 rounded text-xs {% if m.status == 'Active' %}bg-emerald-500/10 text-emerald-400{% else %}bg-amber-500/10 text-amber-400{% endif %}">{{ m.status }}</span></td>
+                                        <td class="p-3 text-center space-x-1">
+                                            <button onclick="openInvoiceModal({{ m|tojson|safe }})" class="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded text-xs font-bold">Invoice PDF</button>
+                                            <button onclick="openEditModal('member', {{ m|tojson|safe }})" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold">Edit</button>
+                                            {% if role == 'admin' %}
+                                            <a href="/delete/member/{{ m.id }}" onclick="return confirm('Confirm delete member?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -658,7 +777,7 @@ DASHBOARD_HTML = """
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_staff">
                             <div>
-                                <label class="text-xs text-gray-400">Staff Name & Role</label>
+                                <label class="text-xs text-gray-400">Staff Name</label>
                                 <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Trainer/Staff Name">
                             </div>
                             <div>
@@ -666,7 +785,11 @@ DASHBOARD_HTML = """
                                 <input type="text" name="phone" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Staff Mobile">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Address</label>
+                                <label class="text-xs text-gray-400">Email Address</label>
+                                <input type="email" name="email" placeholder="staff@example.com" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="text-xs text-gray-400">Residential Address</label>
                                 <input type="text" name="address" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Staff Address">
                             </div>
                             <div>
@@ -697,27 +820,30 @@ DASHBOARD_HTML = """
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
                                         <th class="p-3">Staff Name</th>
-                                        <th class="p-3">Mobile</th>
-                                        <th class="p-3">Address</th>
+                                        <th class="p-3">Contact & Address</th>
                                         <th class="p-3">Base Salary</th>
                                         <th class="p-3">Advance (Minus)</th>
                                         <th class="p-3">Net Pay</th>
                                         <th class="p-3">Attendance</th>
-                                        <th class="p-3 text-center">Action</th>
+                                        <th class="p-3 text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
                                     {% for s in data.staff %}
                                     <tr class="hover:bg-gray-800/30">
                                         <td class="p-3 font-semibold text-white">{{ s.name }}</td>
-                                        <td class="p-3 text-gray-300">{{ s.phone }}</td>
-                                        <td class="p-3 text-gray-300">{{ s.address }}</td>
+                                        <td class="p-3 text-gray-300 text-xs">
+                                            📱 {{ s.phone }}<br>
+                                            📧 {{ s.email or 'N/A' }}<br>
+                                            🏠 {{ s.address }}
+                                        </td>
                                         <td class="p-3 text-gray-200">₹{{ s.base_salary }}</td>
                                         <td class="p-3 text-red-400">₹{{ s.advance }}</td>
                                         <td class="p-3 text-emerald-400 font-bold">₹{{ s.base_salary - s.advance }}</td>
                                         <td class="p-3 text-yellow-300">{{ s.attendance }}</td>
-                                        <td class="p-3 text-center">
-                                            <a href="/delete/staff/{{ s.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
+                                        <td class="p-3 text-center space-x-2">
+                                            <button onclick="openEditModal('staff', {{ s|tojson|safe }})" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold">Edit</button>
+                                            <a href="/delete/staff/{{ s.id }}" onclick="return confirm('Confirm delete staff?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -734,7 +860,7 @@ DASHBOARD_HTML = """
                         <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_expense">
                             <div>
-                                <label class="text-xs text-gray-400">Category</label>
+                                <label class="text-xs text-gray-400">Category / Title</label>
                                 <input type="text" name="category" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Electricity / Maintenance">
                             </div>
                             <div>
@@ -742,7 +868,7 @@ DASHBOARD_HTML = """
                                 <input type="number" name="amount" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400">Date</label>
+                                <label class="text-xs text-gray-400">Date (Calendar Select)</label>
                                 <input type="date" name="date" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
                             </div>
                             <div class="sm:col-span-3">
@@ -760,7 +886,7 @@ DASHBOARD_HTML = """
                                         <th class="p-3">Description</th>
                                         <th class="p-3">Date</th>
                                         <th class="p-3">Amount</th>
-                                        <th class="p-3 text-center">Action</th>
+                                        <th class="p-3 text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-800">
@@ -769,8 +895,9 @@ DASHBOARD_HTML = """
                                         <td class="p-3 font-semibold text-white">{{ e.category }}</td>
                                         <td class="p-3 text-gray-300">{{ e.date }}</td>
                                         <td class="p-3 text-red-400 font-bold">₹{{ e.amount }}</td>
-                                        <td class="p-3 text-center">
-                                            <a href="/delete/expense/{{ e.id }}" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
+                                        <td class="p-3 text-center space-x-2">
+                                            <button onclick="openEditModal('expense', {{ e|tojson|safe }})" class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded text-xs font-bold">Edit</button>
+                                            <a href="/delete/expense/{{ e.id }}" onclick="return confirm('Confirm delete expense?');" class="text-red-400 bg-red-500/10 px-2.5 py-1 rounded text-xs font-bold">Delete</a>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -784,6 +911,230 @@ DASHBOARD_HTML = """
             </div>
         </div>
     </div>
+
+    <!-- UNIVERSAL EDIT MODAL -->
+    <div id="editModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeEditModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white font-bold text-lg">✕</button>
+            <h3 id="modalTitle" class="text-xl font-bold text-emerald-400 mb-4">Edit Entry</h3>
+            <form id="editForm" method="POST" class="space-y-4">
+                <input type="hidden" name="form_type" id="editFormType">
+                <input type="hidden" name="" id="editRecordIdName">
+                <input type="hidden" name="" id="editRecordIdVal" value="">
+                <div id="modalBodyFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Injected dynamically via JS -->
+                </div>
+                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold rounded-xl shadow-lg transition text-sm">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- INVOICE PREVIEW MODAL -->
+    <div id="invoiceModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white text-gray-900 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+            <button onclick="closeInvoiceModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 font-bold text-lg no-print">✕</button>
+            
+            <div class="text-center border-b pb-4 mb-6">
+                <h2 class="text-2xl font-black text-emerald-600">Gym Orbitedgemedia</h2>
+                <p class="text-xs text-gray-500">Official Membership Fee Receipt & Tax Invoice</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                <div>
+                    <p class="text-xs text-gray-500 font-bold">INVOICE TO:</p>
+                    <p id="invName" class="font-bold text-gray-950 text-base"></p>
+                    <p id="invPhone" class="text-xs text-gray-600"></p>
+                    <p id="invEmail" class="text-xs text-gray-600"></p>
+                    <p id="invAddress" class="text-xs text-gray-600"></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 font-bold">INVOICE DETAILS:</p>
+                    <p class="text-xs text-gray-600">Invoice No: <span class="font-bold">GO-2026-001</span></p>
+                    <p class="text-xs text-gray-600">Date Issued: <span id="invIssuedDate" class="font-bold"></span></p>
+                    <p class="text-xs text-gray-600">Status: <span class="font-bold text-emerald-600">PAID</span></p>
+                </div>
+            </div>
+
+            <table class="w-full text-left border-collapse mb-6 text-sm">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-700 border-b">
+                        <th class="p-2.5">Description / Plan</th>
+                        <th class="p-2.5">Scheme</th>
+                        <th class="p-2.5 text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y text-gray-800">
+                    <tr>
+                        <td class="p-2.5"><span id="invPlan"></span><br><span class="text-xs text-gray-500">Start: <span id="invStart"></span> | Expiry: <span id="invEnd"></span></span></td>
+                        <td id="invScheme" class="p-2.5 text-xs"></td>
+                        <td id="invAmount" class="p-2.5 text-right font-semibold"></td>
+                    </tr>
+                    <tr id="ptRow">
+                        <td class="p-2.5"><span class="text-xs text-blue-600 font-bold">Personal Trainer Fees:</span> <span id="invPtTrainer"></span></td>
+                        <td class="p-2.5 text-xs">PT Package</td>
+                        <td id="invPtAmount" class="p-2.5 text-right font-semibold"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="p-2.5 font-bold text-right">Pending Dues:</td>
+                        <td id="invDues" class="p-2.5 text-right font-bold text-amber-600"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="flex justify-between items-center border-t pt-4 mb-8">
+                <span class="font-bold text-gray-700">Total Paid Amount:</span>
+                <span id="invTotalPaid" class="text-2xl font-black text-emerald-600"></span>
+            </div>
+
+            <div class="text-center text-[10px] text-gray-400 border-t pt-4 mb-6">
+                <p>Thank you for choosing Gym Orbitedgemedia! Stay fit, stay healthy.</p>
+                <p>This is a computer-generated invoice document.</p>
+            </div>
+
+            <div class="flex space-x-4 no-print">
+                <button onclick="window.print()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition text-sm text-center">Download / Print PDF</button>
+                <button onclick="closeInvoiceModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition text-sm">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const startDateEl = document.getElementById('add_start_date');
+            if(startDateEl && !startDateEl.value) {
+                const today = new Date().toISOString().split('T')[0];
+                startDateEl.value = today;
+                calcExpiry();
+            }
+        });
+
+        function calcExpiry() {
+            const startInput = document.getElementById('add_start_date');
+            const endInput = document.getElementById('add_end_date');
+            if(startInput && endInput && startInput.value) {
+                let d = new Date(startInput.value);
+                d.setFullYear(d.getFullYear() + 1);
+                endInput.value = d.toISOString().split('T')[0];
+            }
+        }
+
+        function openInvoiceModal(m) {
+            document.getElementById('invName').innerText = m.name;
+            document.getElementById('invPhone').innerText = 'Phone: ' + m.phone;
+            document.getElementById('invEmail').innerText = 'Email: ' + (m.email || 'N/A');
+            document.getElementById('invAddress').innerText = 'Address: ' + (m.address || 'N/A');
+            document.getElementById('invIssuedDate').innerText = new Date().toISOString().split('T')[0];
+            document.getElementById('invPlan').innerText = m.plan;
+            document.getElementById('invScheme').innerText = m.scheme;
+            document.getElementById('invAmount').innerText = '₹' + m.amount;
+            document.getElementById('invStart').innerText = m.start_date;
+            document.getElementById('invEnd').innerText = m.end_date;
+            document.getElementById('invDues').innerText = '₹' + m.dues;
+            
+            const ptRow = document.getElementById('ptRow');
+            if (m.pt_trainer && m.pt_trainer !== 'None') {
+                ptRow.style.display = 'table-row';
+                document.getElementById('invPtTrainer').innerText = '(' + m.pt_trainer + ')';
+                document.getElementById('invPtAmount').innerText = '₹' + m.pt_amount;
+                document.getElementById('invTotalPaid').innerText = '₹' + (m.amount + m.pt_amount);
+            } else {
+                ptRow.style.display = 'none';
+                document.getElementById('invTotalPaid').innerText = '₹' + m.amount;
+            }
+
+            const modal = document.getElementById('invoiceModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeInvoiceModal() {
+            const modal = document.getElementById('invoiceModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function openEditModal(type, item) {
+            const modal = document.getElementById('editModal');
+            const title = document.getElementById('modalTitle');
+            const formType = document.getElementById('editFormType');
+            const idNameInput = document.getElementById('editRecordIdName');
+            const idValInput = document.getElementById('editRecordIdVal');
+            const fieldsContainer = document.getElementById('modalBodyFields');
+            
+            fieldsContainer.innerHTML = '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            if (type === 'member') {
+                title.innerText = 'Edit Member Record';
+                formType.value = 'edit_member';
+                idNameInput.name = 'member_id';
+                idValInput.value = item.id;
+
+                fieldsContainer.innerHTML = `
+                    <div><label class="text-xs text-gray-400">Full Name</label><input type="text" name="name" value="${item.name}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Mobile</label><input type="text" name="phone" value="${item.phone}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Email</label><input type="email" name="email" value="${item.email || ''}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Address</label><input type="text" name="address" value="${item.address || ''}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Plan</label><input type="text" name="plan" value="${item.plan}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Scheme</label><input type="text" name="scheme" value="${item.scheme}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Fee Paid (₹)</label><input type="number" name="amount" value="${item.amount}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Dues (₹)</label><input type="number" name="dues" value="${item.dues}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">PT Trainer</label><input type="text" name="pt_trainer" value="${item.pt_trainer}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">PT Amount (₹)</label><input type="number" name="pt_amount" value="${item.pt_amount}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Start Date</label><input type="date" name="start_date" value="${item.start_date}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">End Date</label><input type="date" name="end_date" value="${item.end_date}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div class="sm:col-span-2"><label class="text-xs text-gray-400">Status</label><select name="status" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"><option value="Active" ${item.status=='Active'?'selected':''}>Active</option><option value="Frozen" ${item.status=='Frozen'?'selected':''}>Frozen</option></select></div>
+                `;
+            } else if (type === 'lead') {
+                title.innerText = 'Edit Lead Record';
+                formType.value = 'edit_lead';
+                idNameInput.name = 'lead_id';
+                idValInput.value = item.id;
+
+                fieldsContainer.innerHTML = `
+                    <div><label class="text-xs text-gray-400">Name</label><input type="text" name="name" value="${item.name}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Phone</label><input type="text" name="phone" value="${item.phone}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Email</label><input type="email" name="email" value="${item.email || ''}" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Source</label><input type="text" name="source" value="${item.source}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Status</label><input type="text" name="status" value="${item.status}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Follow-up Date</label><input type="date" name="follow_up_date" value="${item.follow_up_date}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                `;
+            } else if (type === 'staff') {
+                title.innerText = 'Edit Staff Record';
+                formType.value = 'edit_staff';
+                idNameInput.name = 'staff_id';
+                idValInput.value = item.id;
+
+                fieldsContainer.innerHTML = `
+                    <div><label class="text-xs text-gray-400">Name</label><input type="text" name="name" value="${item.name}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Phone</label><input type="text" name="phone" value="${item.phone}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Email</label><input type="email" name="email" value="${item.email || ''}" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Address</label><input type="text" name="address" value="${item.address}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Base Salary (₹)</label><input type="number" name="base_salary" value="${item.base_salary}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Advance (₹)</label><input type="number" name="advance" value="${item.advance}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div class="sm:col-span-2"><label class="text-xs text-gray-400">Attendance</label><input type="text" name="attendance" value="${item.attendance}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                `;
+            } else if (type === 'expense') {
+                title.innerText = 'Edit Expense Record';
+                formType.value = 'edit_expense';
+                idNameInput.name = 'expense_id';
+                idValInput.value = item.id;
+
+                fieldsContainer.innerHTML = `
+                    <div><label class="text-xs text-gray-400">Category</label><input type="text" name="category" value="${item.category}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Amount (₹)</label><input type="number" name="amount" value="${item.amount}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div class="sm:col-span-2"><label class="text-xs text-gray-400">Date</label><input type="date" name="date" value="${item.date}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                `;
+            }
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+    </script>
 
     {% if action == 'dashboard' and role == 'admin' %}
     <script>
