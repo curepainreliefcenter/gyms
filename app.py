@@ -48,13 +48,16 @@ def load_data():
         "staff": [
             {
                 "id": 1, 
-                "name": "Amit (Trainer)", 
+                "name": "Amit", 
+                "role": "Trainer",
                 "phone": "9876543210", 
                 "email": "amit@gym.com",
                 "address": "Main Street, Gym Area", 
                 "base_salary": 15000, 
                 "advance": 3000,
-                "attendance": "Present"
+                "attendance": "Present",
+                "doc_type": "Aadhaar Card",
+                "doc_data": ""
             }
         ],
         "expenses": [
@@ -116,7 +119,7 @@ def save_data(data):
     encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
     payload = {
-        "message": "Gym Orbitedgemedia PDF reports and quick comms update",
+        "message": "Gym Staff docs and offer letter update",
         "content": encoded_content,
         "branch": GITHUB_BRANCH
     }
@@ -259,15 +262,26 @@ def index():
 
         elif role == "admin":
             if form_type == "add_staff":
+                doc_file = request.files.get("doc_file")
+                doc_data_b64 = ""
+                if doc_file and doc_file.filename != "":
+                    file_bytes = doc_file.read()
+                    encoded = base64.b64encode(file_bytes).decode("utf-8")
+                    mime = doc_file.content_type or "application/pdf"
+                    doc_data_b64 = f"data:{mime};base64,{encoded}"
+
                 new_staff = {
                     "id": max([s["id"] for s in data["staff"]], default=0) + 1,
                     "name": request.form.get("name"),
+                    "role": request.form.get("role", "Trainer"),
                     "phone": request.form.get("phone"),
                     "email": request.form.get("email"),
                     "address": request.form.get("address"),
                     "base_salary": int(request.form.get("base_salary", 0)),
                     "advance": int(request.form.get("advance", 0)),
-                    "attendance": request.form.get("attendance", "Present")
+                    "attendance": request.form.get("attendance", "Present"),
+                    "doc_type": request.form.get("doc_type", "Aadhaar Card"),
+                    "doc_data": doc_data_b64
                 }
                 data["staff"].append(new_staff)
                 save_data(data)
@@ -278,12 +292,21 @@ def index():
                 for s in data["staff"]:
                     if s["id"] == s_id:
                         s["name"] = request.form.get("name")
+                        s["role"] = request.form.get("role", "Trainer")
                         s["phone"] = request.form.get("phone")
                         s["email"] = request.form.get("email")
                         s["address"] = request.form.get("address")
                         s["base_salary"] = int(request.form.get("base_salary", 0))
                         s["advance"] = int(request.form.get("advance", 0))
                         s["attendance"] = request.form.get("attendance")
+                        s["doc_type"] = request.form.get("doc_type", s.get("doc_type", "Aadhaar Card"))
+                        
+                        doc_file = request.files.get("doc_file")
+                        if doc_file and doc_file.filename != "":
+                            file_bytes = doc_file.read()
+                            encoded = base64.b64encode(file_bytes).decode("utf-8")
+                            mime = doc_file.content_type or "application/pdf"
+                            s["doc_data"] = f"data:{mime};base64,{encoded}"
                 save_data(data)
                 return redirect(url_for("index", action="staff"))
 
@@ -419,10 +442,10 @@ DASHBOARD_HTML = """
             body * {
                 visibility: hidden;
             }
-            #invoiceModal, #invoiceModal *, .printable-section, .printable-section * {
+            #invoiceModal, #invoiceModal *, #docViewModal, #docViewModal *, #offerModal, #offerModal *, .printable-section, .printable-section * {
                 visibility: visible;
             }
-            .printable-section {
+            .printable-section, #docViewModal, #invoiceModal, #offerModal {
                 position: absolute;
                 left: 0;
                 top: 0;
@@ -815,12 +838,22 @@ DASHBOARD_HTML = """
                 {% elif action == 'staff' and role == 'admin' %}
                 <div class="space-y-6">
                     <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
-                        <h2 class="text-xl font-bold text-yellow-400 mb-4">👔 Staff Payroll, Attendance & Auto-Deduction</h2>
-                        <form method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <h2 class="text-xl font-bold text-yellow-400 mb-4">👔 Add Staff & Trainers (Roles, ID Proofs & Document Upload)</h2>
+                        <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <input type="hidden" name="form_type" value="add_staff">
                             <div>
-                                <label class="text-xs text-gray-400">Staff Name</label>
-                                <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="Trainer/Staff Name">
+                                <label class="text-xs text-gray-400">Staff Full Name</label>
+                                <input type="text" name="name" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm" placeholder="e.g. Amit Sharma">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Staff Role / Designation</label>
+                                <select name="role" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                                    <option value="Trainer">Trainer</option>
+                                    <option value="Cleaning">Cleaning Staff</option>
+                                    <option value="Receptionist">Receptionist</option>
+                                    <option value="Manager">Manager</option>
+                                    <option value="Maintenance">Maintenance / Utility</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="text-xs text-gray-400">Mobile Number</label>
@@ -849,15 +882,29 @@ DASHBOARD_HTML = """
                                     <option value="On Leave">On Leave</option>
                                 </select>
                             </div>
+                            <div>
+                                <label class="text-xs text-gray-400">Document Type Submitted</label>
+                                <select name="doc_type" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm">
+                                    <option value="Aadhaar Card">Aadhaar Card</option>
+                                    <option value="PAN Card">PAN Card</option>
+                                    <option value="Voter ID">Voter ID</option>
+                                    <option value="Driving License">Driving License</option>
+                                    <option value="Passport">Passport</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="text-xs text-gray-400">Upload Document File (PNG, JPEG, PDF)</label>
+                                <input type="file" name="doc_file" accept=".png, .jpg, .jpeg, .pdf" class="w-full mt-1 p-2 bg-gray-800 rounded-xl border border-gray-700 text-xs text-gray-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-yellow-500 file:text-gray-950 hover:file:bg-yellow-600">
+                            </div>
                             <div class="sm:col-span-3">
-                                <button type="submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Staff Record</button>
+                                <button type="submit" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 font-bold text-gray-950 rounded-xl transition text-sm shadow-lg">Save Staff & Upload Document</button>
                             </div>
                         </form>
                     </div>
 
                     <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl overflow-hidden printable-section">
                         <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <h3 class="font-bold text-gray-200">📋 Staff Payroll Ledger</h3>
+                            <h3 class="font-bold text-gray-200">📋 Staff Payroll & Documents Ledger</h3>
                             <div class="flex items-center gap-2 w-full sm:w-auto no-print">
                                 <input type="text" id="searchStaff" onkeyup="filterTable('searchStaff', 'staffTable')" placeholder="🔍 Search staff..." class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-60">
                                 <button type="button" onclick="window.print()" class="px-3.5 py-2 bg-yellow-500 hover:bg-yellow-600 text-gray-950 font-bold rounded-xl text-xs whitespace-nowrap cursor-pointer">📄 Export PDF</button>
@@ -867,12 +914,11 @@ DASHBOARD_HTML = """
                             <table id="staffTable" class="w-full text-left border-collapse text-sm">
                                 <thead>
                                     <tr class="bg-gray-800/50 text-gray-400">
-                                        <th class="p-3">Staff Name</th>
+                                        <th class="p-3">Staff Name & Role</th>
                                         <th class="p-3">Contact & Address</th>
-                                        <th class="p-3">Base Salary</th>
-                                        <th class="p-3">Advance (Minus)</th>
-                                        <th class="p-3">Net Pay</th>
-                                        <th class="p-3">Attendance</th>
+                                        <th class="p-3">Salary & Net Pay</th>
+                                        <th class="p-3">ID Proof & Document</th>
+                                        <th class="p-3 text-center no-print">Offer Letter</th>
                                         <th class="p-3 text-center no-print">Quick Comms</th>
                                         <th class="p-3 text-center no-print">Actions</th>
                                     </tr>
@@ -880,16 +926,31 @@ DASHBOARD_HTML = """
                                 <tbody class="divide-y divide-gray-800">
                                     {% for s in data.staff %}
                                     <tr class="hover:bg-gray-800/30">
-                                        <td class="p-3 font-semibold text-white">{{ s.name }}</td>
+                                        <td class="p-3 font-semibold text-white">
+                                            {{ s.name }}
+                                            <br><span class="text-xs text-yellow-400 px-2 py-0.5 bg-yellow-500/10 rounded-full inline-block mt-1">{{ s.role or 'Trainer' }}</span>
+                                        </td>
                                         <td class="p-3 text-gray-300 text-xs">
                                             📱 {{ s.phone }}<br>
                                             📧 {{ s.email or 'N/A' }}<br>
                                             🏠 {{ s.address }}
                                         </td>
-                                        <td class="p-3 text-gray-200">₹{{ s.base_salary }}</td>
-                                        <td class="p-3 text-red-400">₹{{ s.advance }}</td>
-                                        <td class="p-3 text-emerald-400 font-bold">₹{{ s.base_salary - s.advance }}</td>
-                                        <td class="p-3 text-yellow-300">{{ s.attendance }}</td>
+                                        <td class="p-3 text-gray-200 text-xs">
+                                            Base: ₹{{ s.base_salary }}<br>
+                                            Advance: <span class="text-red-400">₹{{ s.advance }}</span><br>
+                                            Net: <span class="text-emerald-400 font-bold">₹{{ s.base_salary - s.advance }}</span>
+                                        </td>
+                                        <td class="p-3 text-xs">
+                                            <span class="text-blue-400 font-bold">{{ s.doc_type or 'Aadhaar Card' }}</span><br>
+                                            {% if s.doc_data %}
+                                            <button type="button" onclick="openDocModal('{{ s.doc_data }}', '{{ s.name }} - {{ s.doc_type }}')" class="mt-1 text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded font-bold hover:bg-emerald-500/20 cursor-pointer inline-block">👁️ View Document</button>
+                                            {% else %}
+                                            <span class="text-gray-500 italic">No file uploaded</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="p-3 text-center no-print">
+                                            <button type="button" onclick='openOfferModal({{ s|tojson|safe }})' class="text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded text-xs font-bold cursor-pointer inline-block">📜 Generate Offer Letter</button>
+                                        </td>
                                         <td class="p-3 text-center space-x-1 no-print">
                                             <a href="https://wa.me/91{{ s.phone }}?text=Hello%20{{ s.name }},%20message%20from%20Gym%20Orbitedgemedia!" target="_blank" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-xs font-bold inline-block">💬 WhatsApp</a>
                                             {% if s.email %}
@@ -973,12 +1034,69 @@ DASHBOARD_HTML = """
         </div>
     </div>
 
+    <!-- DOCUMENT PREVIEW MODAL (SMALL WINDOW) -->
+    <div id="docViewModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+            <button type="button" onclick="closeDocModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white font-bold text-lg cursor-pointer">✕</button>
+            <h3 id="docModalTitle" class="text-lg font-bold text-emerald-400 mb-4">Document Viewer</h3>
+            <div id="docViewerContainer" class="w-full h-80 bg-gray-950 rounded-xl flex items-center justify-center overflow-hidden border border-gray-800">
+                <!-- Injected via JS -->
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button type="button" onclick="closeDocModal()" class="px-5 py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-xs cursor-pointer">Close Window</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OFFER LETTER MODAL -->
+    <div id="offerModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white text-gray-900 rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+            <button type="button" onclick="closeOfferModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-900 font-bold text-lg no-print cursor-pointer">✕</button>
+            
+            <div class="text-center border-b pb-4 mb-6">
+                <h2 class="text-2xl font-black text-emerald-600">Gym Orbitedgemedia</h2>
+                <p class="text-xs text-gray-500">Official Employment Offer Letter</p>
+            </div>
+
+            <div class="mb-4 text-sm space-y-1">
+                <p class="text-xs text-gray-500">Date: <span id="offerDate" class="font-bold text-gray-800"></span></p>
+                <p class="font-bold text-gray-950 text-base mt-2">To, <span id="offerName"></span></p>
+                <p class="text-xs text-gray-600">Address: <span id="offerAddress"></span></p>
+                <p class="text-xs text-gray-600">Phone: <span id="offerPhone"></span></p>
+            </div>
+
+            <div class="space-y-3 text-xs sm:text-sm text-gray-700 leading-relaxed mb-6">
+                <p class="font-bold text-gray-900">Subject: Employment Offer Letter for the position of <span id="offerRoleTitle" class="text-emerald-600"></span></p>
+                <p>Dear <span id="offerNameDear" class="font-semibold"></span>,</p>
+                <p>We are thrilled to offer you employment at <strong>Gym Orbitedgemedia</strong> starting immediately in our professional fitness facility. We were deeply impressed by your background and enthusiasm.</p>
+                <p>Your designation will be <strong id="offerRoleDesc"></strong> with a committed monthly base salary of <strong id="offerSalary" class="text-emerald-600"></strong>.</p>
+                <p>We look forward to working with you to deliver world-class service to our fitness members. Please sign and return a copy of this letter as acceptance of our offer.</p>
+            </div>
+
+            <div class="flex justify-between items-center border-t pt-6 mb-6 text-sm">
+                <div>
+                    <p class="font-bold text-gray-900">Authorized Signatory</p>
+                    <p class="text-xs text-gray-500">Gym Orbitedgemedia Management</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-gray-900">Employee Acceptance</p>
+                    <p class="text-xs text-gray-500">Signature & Date</p>
+                </div>
+            </div>
+
+            <div class="flex space-x-4 no-print">
+                <button type="button" onclick="window.print()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition text-sm text-center cursor-pointer">Download / Print Offer Letter</button>
+                <button type="button" onclick="closeOfferModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition text-sm cursor-pointer">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- UNIVERSAL EDIT MODAL -->
     <div id="editModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
         <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button type="button" onclick="closeEditModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white font-bold text-lg cursor-pointer">✕</button>
             <h3 id="modalTitle" class="text-xl font-bold text-emerald-400 mb-4">Edit Entry</h3>
-            <form id="editForm" method="POST" class="space-y-4">
+            <form id="editForm" method="POST" enctype="multipart/form-data" class="space-y-4">
                 <input type="hidden" name="form_type" id="editFormType">
                 <input type="hidden" name="" id="editRecordIdVal" value="">
                 <div id="modalBodyFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1099,6 +1217,79 @@ DASHBOARD_HTML = """
             }
         }
 
+        function openDocModal(dataUri, titleText) {
+            document.getElementById('docModalTitle').innerText = titleText;
+            const container = document.getElementById('docViewerContainer');
+            container.innerHTML = '';
+            
+            if (dataUri.startsWith('data:application/pdf')) {
+                container.innerHTML = `<iframe src="${dataUri}" class="w-full h-full border-0"></iframe>`;
+            } else {
+                container.innerHTML = `<img src="${dataUri}" class="max-h-full max-w-full object-contain rounded-lg">`;
+            }
+
+            const modal = document.getElementById('docViewModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDocModal() {
+            const modal = document.getElementById('docViewModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function openOfferModal(s) {
+            document.getElementById('offerDate').innerText = new Date().toISOString().split('T')[0];
+            document.getElementById('offerName').innerText = s.name;
+            document.getElementById('offerNameDear').innerText = s.name;
+            document.getElementById('offerAddress').innerText = s.address || 'N/A';
+            document.getElementById('offerPhone').innerText = s.phone;
+            const roleStr = s.role || 'Trainer';
+            document.getElementById('offerRoleTitle').innerText = roleStr;
+            document.getElementById('offerRoleDesc').innerText = roleStr;
+            document.getElementById('offerSalary').innerText = '₹' + s.base_salary + ' per month';
+
+            const modal = document.getElementById('offerModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeOfferModal() {
+            const modal = document.getElementById('offerModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function openInvoiceModal(m) {
+            document.getElementById('invName').innerText = m.name;
+            document.getElementById('invPhone').innerText = 'Phone: ' + m.phone;
+            document.getElementById('invEmail').innerText = 'Email: ' + (m.email || 'N/A');
+            document.getElementById('invAddress').innerText = 'Address: ' + (m.address || 'N/A');
+            document.getElementById('invIssuedDate').innerText = new Date().toISOString().split('T')[0];
+            document.getElementById('invPlan').innerText = m.plan;
+            document.getElementById('invScheme').innerText = m.scheme;
+            document.getElementById('invAmount').innerText = '₹' + m.amount;
+            document.getElementById('invStart').innerText = m.start_date;
+            document.getElementById('invEnd').innerText = m.end_date;
+            document.getElementById('invDues').innerText = '₹' + m.dues;
+            
+            const ptRow = document.getElementById('ptRow');
+            if (m.pt_trainer && m.pt_trainer !== 'None') {
+                ptRow.style.display = 'table-row';
+                document.getElementById('invPtTrainer').innerText = '(' + m.pt_trainer + ')';
+                document.getElementById('invPtAmount').innerText = '₹' + m.pt_amount;
+                document.getElementById('invTotalPaid').innerText = '₹' + (m.amount + m.pt_amount);
+            } else {
+                ptRow.style.display = 'none';
+                document.getElementById('invTotalPaid').innerText = '₹' + m.amount;
+            }
+
+            const modal = document.getElementById('invoiceModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden'); // Fixed toggle sequence below
+        }
+
         function openInvoiceModal(m) {
             document.getElementById('invName').innerText = m.name;
             document.getElementById('invPhone').innerText = 'Phone: ' + m.phone;
@@ -1188,12 +1379,15 @@ DASHBOARD_HTML = """
 
                 fieldsContainer.innerHTML = `
                     <div><label class="text-xs text-gray-400">Name</label><input type="text" name="name" value="${item.name}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Role</label><select name="role" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"><option value="Trainer" ${item.role=='Trainer'?'selected':''}>Trainer</option><option value="Cleaning" ${item.role=='Cleaning'?'selected':''}>Cleaning Staff</option><option value="Receptionist" ${item.role=='Receptionist'?'selected':''}>Receptionist</option><option value="Manager" ${item.role=='Manager'?'selected':''}>Manager</option><option value="Maintenance" ${item.role=='Maintenance'?'selected':''}>Maintenance</option></select></div>
                     <div><label class="text-xs text-gray-400">Phone</label><input type="text" name="phone" value="${item.phone}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
                     <div><label class="text-xs text-gray-400">Email</label><input type="email" name="email" value="${item.email || ''}" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
-                    <div><label class="text-xs text-gray-400">Address</label><input type="text" name="address" value="${item.address}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div class="sm:col-span-2"><label class="text-xs text-gray-400">Address</label><input type="text" name="address" value="${item.address}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
                     <div><label class="text-xs text-gray-400">Base Salary (₹)</label><input type="number" name="base_salary" value="${item.base_salary}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
                     <div><label class="text-xs text-gray-400">Advance (₹)</label><input type="number" name="advance" value="${item.advance}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
-                    <div class="sm:col-span-2"><label class="text-xs text-gray-400">Attendance</label><input type="text" name="attendance" value="${item.attendance}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Attendance</label><input type="text" name="attendance" value="${item.attendance}" required class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"></div>
+                    <div><label class="text-xs text-gray-400">Doc Type</label><select name="doc_type" class="w-full mt-1 p-2.5 bg-gray-800 rounded-xl border border-gray-700 text-sm"><option value="Aadhaar Card" ${item.doc_type=='Aadhaar Card'?'selected':''}>Aadhaar Card</option><option value="PAN Card" ${item.doc_type=='PAN Card'?'selected':''}>PAN Card</option><option value="Voter ID" ${item.doc_type=='Voter ID'?'selected':''}>Voter ID</option><option value="Driving License" ${item.doc_type=='Driving License'?'selected':''}>Driving License</option><option value="Passport" ${item.doc_type=='Passport'?'selected':''}>Passport</option></select></div>
+                    <div class="sm:col-span-2"><label class="text-xs text-gray-400">Update Document File (Optional)</label><input type="file" name="doc_file" accept=".png, .jpg, .jpeg, .pdf" class="w-full mt-1 p-2 bg-gray-800 rounded-xl border border-gray-700 text-xs text-gray-300"></div>
                 `;
             } else if (type === 'expense') {
                 title.innerText = 'Edit Expense Record';
