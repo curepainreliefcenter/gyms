@@ -1,13 +1,6 @@
 {
     "members": [],
     "staff": [],
-    "expenses": [
-        {
-            "id": 1,
-            "category": "Electricity Bill",
-            "amount": 4500,
-            "date": "2026-06-01"
-        }
-    ],
+    "expenses": [],
     "leads": []
 }
