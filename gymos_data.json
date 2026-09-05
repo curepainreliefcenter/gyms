@@ -34,7 +34,7 @@
             "dues": 1000,
             "pt_trainer": "None",
             "pt_amount": 1500,
-            "status": "Active",
+            "status": "Frozen",
             "start_date": "2026-09-05",
             "end_date": "2027-09-05"
         }
