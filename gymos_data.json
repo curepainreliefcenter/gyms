@@ -1,17 +1,6 @@
 {
     "members": [
         {
-            "id": 1,
-            "name": "john",
-            "phone": "7894561230",
-            "plan": "Gold (12 Months)",
-            "scheme": "12+1 Free",
-            "amount": 500,
-            "pt_trainer": "Amit",
-            "pt_amount": 7822,
-            "status": "Active"
-        },
-        {
             "id": 2,
             "name": "Shivam do. ",
             "phone": "123456891",
