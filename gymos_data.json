@@ -1,5 +1,22 @@
 {
-    "members": [],
+    "members": [
+        {
+            "id": 1,
+            "name": "fb ",
+            "phone": "6516531653rrrr",
+            "email": "drdd@gmail.com",
+            "address": "delhi ",
+            "plan": "Silver (6 Months)",
+            "scheme": "Standard",
+            "amount": 5200,
+            "dues": 3222,
+            "pt_trainer": "Anil",
+            "pt_amount": 1000,
+            "status": "Active",
+            "start_date": "2026-09-05",
+            "end_date": "2027-09-05"
+        }
+    ],
     "staff": [
         {
             "id": 1,
