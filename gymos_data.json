@@ -2,5 +2,15 @@
     "members": [],
     "staff": [],
     "expenses": [],
-    "leads": []
+    "leads": [
+        {
+            "id": 1,
+            "name": "Vyom Singh",
+            "phone": "7023671246",
+            "email": "singhyorocky321@gmail.com",
+            "source": "Walk-In",
+            "status": "Trial (3-Day)",
+            "follow_up_date": "2026-09-05"
+        }
+    ]
 }
