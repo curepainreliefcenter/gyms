@@ -1,5 +1,22 @@
 {
-    "members": [],
+    "members": [
+        {
+            "id": 1,
+            "name": "Vyom Singh",
+            "phone": "7023671246",
+            "email": "singhyorocky321@gmail.com",
+            "address": "677888",
+            "plan": "Gold (12 Months)",
+            "scheme": "12+1 Free",
+            "amount": 10,
+            "dues": 0,
+            "pt_trainer": "None",
+            "pt_amount": 0,
+            "status": "Active",
+            "start_date": "2026-09-06",
+            "end_date": "2027-09-06"
+        }
+    ],
     "staff": [],
     "expenses": [],
     "leads": [
